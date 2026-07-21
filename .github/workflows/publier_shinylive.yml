@@ -1,0 +1,162 @@
+# =============================================================================
+#  Publication de la carte interactive des effectifs étudiants en Shinylive
+#  (Observatoire ESRI Normandie)
+# -----------------------------------------------------------------------------
+#  Shinylive convertit l'application Shiny en un site STATIQUE : R est compilé
+#  en WebAssembly et s'exécute dans le navigateur du visiteur. Aucun serveur R
+#  n'est nécessaire, et surtout aucune donnée ne transite par un serveur tiers —
+#  les fichiers .rds sont téléchargés par le navigateur puis traités localement.
+#
+#  L'export est réalisé ici, dans GitHub Actions, et non sur le poste de
+#  travail : il télécharge plusieurs centaines de mégaoctets depuis
+#  repo.r-wasm.org, ce que le proxy de la Région bloque habituellement.
+#
+#  À placer dans :  .github/workflows/publier_shinylive.yml
+#  Structure attendue du dépôt :
+#     app/app.R
+#     app/data_app/donnees_carte.rds, geo_cantons.rds, geo_arr.rds
+#     app/www/<logo>.jpg
+# =============================================================================
+
+name: Publier l'application (Shinylive)
+
+on:
+  workflow_dispatch:        # publication à la demande, depuis l'onglet Actions
+  push:
+    branches: [main]
+    paths:                  # ne republie que si l'application change
+      - 'app/**'
+      - '.github/workflows/publier_shinylive.yml'
+
+# Droits requis par le déploiement GitHub Pages
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Une seule publication à la fois
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  construire:
+    runs-on: ubuntu-latest
+    steps:
+      # Piège connu : workflow_dispatch peut exécuter une version en cache du
+      # dépôt. On force une récupération propre et on trace ce qui est exécuté.
+      - name: Récupérer le dépôt
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          clean: true
+
+      - name: Tracer la version exécutée
+        run: |
+          git log -1 --oneline
+          echo "--- contenu de app/ ---"
+          ls -la app
+          echo "--- taille des données ---"
+          du -sh app/data_app app/www
+          du -h app/data_app/*
+
+      - name: Installer R
+        uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: '4.4.3'
+          use-public-rspm: true
+
+      - name: Installer shinylive
+        uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          packages: any::shinylive
+
+      # Contrôle non bloquant : indique lesquelles des bibliothèques utilisées
+      # sont réellement disponibles en binaire WebAssembly. En cas d'échec de
+      # l'export, c'est ici qu'on lira la cause.
+      - name: Vérifier la disponibilité des bibliothèques en WebAssembly
+        continue-on-error: true
+        run: |
+          Rscript -e '
+            besoin <- c("shiny","dplyr","tidyr","sf","leaflet","leaflet.extras",
+                        "htmltools","htmlwidgets","DT","ggplot2","scales",
+                        "officer","ggrepel")
+            dispo <- NULL
+            for (v in c("4.5","4.4","4.3")) {
+              u <- paste0("https://repo.r-wasm.org/bin/emscripten/contrib/", v)
+              d <- try(available.packages(contriburl = u), silent = TRUE)
+              if (!inherits(d, "try-error") && nrow(d) > 0) {
+                cat("Dépôt WebAssembly interrogé :", u, "-", nrow(d), "paquets\n\n")
+                dispo <- rownames(d); break
+              }
+            }
+            if (is.null(dispo)) { cat("Dépôt injoignable, contrôle ignoré.\n"); quit(status = 0) }
+            for (p in besoin)
+              cat(sprintf("  %-16s %s\n", p, if (p %in% dispo) "disponible" else "*** ABSENT ***"))
+            manquants <- setdiff(besoin, dispo)
+            if (length(manquants))
+              cat("\nATTENTION, absentes :", paste(manquants, collapse = ", "),
+                  "\nL export va probablement échouer sur ces bibliothèques.\n")
+          '
+
+      # wasm_packages = TRUE est CAPITAL ici : les binaires WebAssembly des
+      # bibliothèques sont alors EMBARQUÉS dans le site publié. Avec FALSE, le
+      # navigateur du visiteur irait les chercher à l'exécution sur
+      # repo.r-wasm.org — c'est-à-dire exactement le genre de connexion
+      # sortante que le proxy de la Région bloque. Le site est plus lourd,
+      # mais tout est servi depuis github.io et rien d'autre n'est appelé.
+      - name: Exporter l'application en Shinylive
+        run: |
+          Rscript -e '
+            shinylive::export("app", "site",
+                              wasm_packages = TRUE,
+                              max_filesize  = "300M")
+          '
+
+      # Contrôle empirique du point ci-dessus : si le dossier des binaires
+      # existe et pèse plusieurs dizaines de mégaoctets, les bibliothèques sont
+      # bien embarquées. S'il est absent, elles seraient téléchargées par le
+      # visiteur et l'application resterait bloquée derrière le proxy.
+      - name: Vérifier que les bibliothèques sont embarquées
+        run: |
+          if [ -d site/shinylive/webr/packages ]; then
+            echo "Bibliothèques embarquées :"
+            du -sh site/shinylive/webr/packages
+            ls site/shinylive/webr/packages | head -20
+          else
+            echo "ATTENTION : aucun dossier de bibliothèques embarquées."
+            echo "Le navigateur devra les télécharger depuis repo.r-wasm.org,"
+            echo "ce que le proxy de la Région bloquera probablement."
+            find site -maxdepth 3 -type d | head -20
+          fi
+
+      - name: Mesurer ce que les collègues devront télécharger
+        run: |
+          echo "--- poids total du site ---"
+          du -sh site
+          echo "--- les 15 fichiers les plus lourds ---"
+          find site -type f -printf "%s\t%p\n" | sort -rn | head -15 | \
+            awk -F'\t' '{printf "%8.1f Mo  %s\n", $1/1048576, $2}'
+
+      - name: Préparer l'artefact pour GitHub Pages
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+  publier:
+    needs: construire
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploiement.outputs.page_url }}
+    steps:
+      - name: Déployer sur GitHub Pages
+        id: deploiement
+        uses: actions/deploy-pages@v4
+
+      # Le bloc | évite tout souci de guillemets ou de deux-points en YAML.
+      - name: Rappeler l'adresse publiée
+        run: |
+          echo "Application publiée à l'adresse suivante :"
+          echo "${{ steps.deploiement.outputs.page_url }}"
