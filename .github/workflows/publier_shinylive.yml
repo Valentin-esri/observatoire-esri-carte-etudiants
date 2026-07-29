@@ -151,13 +151,16 @@ jobs:
             # binaires de paquets). On evite ainsi que le dépôt webR courant,
             # passe a R 4.6, ne casse le prechargement. 0.10.5 = webR 0.5.5,
             # version murie ou tous nos paquets ont un binaire WebAssembly.
+            # --- ECRAN D ACCUEIL TEMPORAIREMENT DESACTIVE (test de chargement) ---
+            # Pour reactiver : remettre « include_before_body = accueil » dans la
+            # liste template_params ci-dessous. Tout le code de lecture/encodage
+            # au-dessus reste en place, il ne fait que preparer « accueil ».
             shinylive::export("app", "site",
                               wasm_packages   = TRUE,
                               max_filesize    = "300M",
                               assets_version  = "0.10.5",
                               template_params = list(
-                                title              = "Cartographie des etudiants en Normandie",
-                                include_before_body = accueil
+                                title = "Cartographie des etudiants en Normandie"
                               ))
           '
 
