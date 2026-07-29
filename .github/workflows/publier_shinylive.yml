@@ -147,18 +147,18 @@ jobs:
               accueil <- gsub("__LOGO_DISPLAY__",  "none", accueil, fixed = TRUE)
               cat("Aucun logo trouve dans app/www : ecran sans logo.\n")
             }
-            # assets_version FIGE la version des assets webR (donc de R et des
-            # binaires de paquets). On evite ainsi que le dépôt webR courant,
-            # passe a R 4.6, ne casse le prechargement. 0.10.5 = webR 0.5.5,
-            # version murie ou tous nos paquets ont un binaire WebAssembly.
+            # TEST R 4.6 : le figeage des assets est DESACTIVE (ligne commentee
+            # ci-dessous). export() prend donc la version d assets la plus recente
+            # du package, soit webR 0.6.x / R 4.6. Si le prechargement rebloque
+            # (« preload error » en cascade, application qui ne demarre pas),
+            # RETABLIR la stabilite en DECOMMENTANT « assets_version = "0.10.5" ».
             # --- ECRAN D ACCUEIL TEMPORAIREMENT DESACTIVE (test de chargement) ---
             # Pour reactiver : remettre « include_before_body = accueil » dans la
-            # liste template_params ci-dessous. Tout le code de lecture/encodage
-            # au-dessus reste en place, il ne fait que preparer « accueil ».
+            # liste template_params ci-dessous.
             shinylive::export("app", "site",
                               wasm_packages   = TRUE,
                               max_filesize    = "300M",
-                              assets_version  = "0.10.5",
+                              # assets_version  = "0.10.5",   # <- decommenter pour revenir a R 4.5.1 stable
                               template_params = list(
                                 title = "Cartographie des etudiants en Normandie"
                               ))
