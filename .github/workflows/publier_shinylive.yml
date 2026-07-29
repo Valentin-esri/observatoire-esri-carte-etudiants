@@ -70,7 +70,9 @@ jobs:
       - name: Installer shinylive
         uses: r-lib/actions/setup-r-dependencies@v2
         with:
-          packages: any::shinylive
+          packages: |
+            any::shinylive
+            any::base64enc
 
       # Contrôle non bloquant : indique lesquelles des bibliothèques utilisées
       # sont réellement disponibles en binaire WebAssembly. En cas d'échec de
@@ -106,14 +108,45 @@ jobs:
       # repo.r-wasm.org — c'est-à-dire exactement le genre de connexion
       # sortante que le proxy de la Région bloque. Le site est plus lourd,
       # mais tout est servi depuis github.io et rien d'autre n'est appelé.
+      # L'ecran d'accueil (ecran_accueil.html, a la racine du depot) est injecte
+      # dans la page via include_before_body : il s'affiche instantanement, le
+      # temps que le moteur R se telecharge. On LIT le fichier plutot que de
+      # l'inliner dans la commande, pour ne pas se soucier des apostrophes du
+      # JavaScript.
       - name: Exporter l'application en Shinylive
         run: |
           Rscript -e '
+            accueil <- if (file.exists("ecran_accueil.html"))
+                         paste(readLines("ecran_accueil.html",
+                                         encoding = "UTF-8", warn = FALSE),
+                               collapse = "\n")
+                       else ""
+            # Embarquer le logo en base64 : lecture du fichier de l app, encodage,
+            # remplacement des marqueurs. Ainsi l ecran affiche le VRAI logo du
+            # depot, sans dependre d un chemin resolu avant le demarrage de R.
+            logo <- list.files("app/www",
+                               pattern = "(?i)logo.*\\.(png|jpe?g)$",
+                               full.names = TRUE)
+            if (length(logo) > 0 && nzchar(accueil)) {
+              f    <- logo[1]
+              type <- if (grepl("(?i)png$", f)) "image/png" else "image/jpeg"
+              b64  <- base64enc::base64encode(f)
+              uri  <- paste0("data:", type, ";base64,", b64)
+              accueil <- gsub("__LOGO_DATA_URI__", uri,     accueil, fixed = TRUE)
+              accueil <- gsub("__LOGO_DISPLAY__",  "inline-block", accueil, fixed = TRUE)
+              cat("Logo embarque dans l ecran d accueil :", basename(f), "\n")
+            } else if (nzchar(accueil)) {
+              # Pas de logo trouve : on neutralise les marqueurs (image masquee).
+              accueil <- gsub("__LOGO_DATA_URI__", "",     accueil, fixed = TRUE)
+              accueil <- gsub("__LOGO_DISPLAY__",  "none", accueil, fixed = TRUE)
+              cat("Aucun logo trouve dans app/www : ecran sans logo.\n")
+            }
             shinylive::export("app", "site",
                               wasm_packages   = TRUE,
                               max_filesize    = "300M",
                               template_params = list(
-                                title = "Cartographie des etudiants en Normandie"
+                                title              = "Cartographie des etudiants en Normandie",
+                                include_before_body = accueil
                               ))
           '
 
