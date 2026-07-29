@@ -70,6 +70,9 @@ jobs:
       - name: Installer shinylive
         uses: r-lib/actions/setup-r-dependencies@v2
         with:
+          # any::shinylive prend la derniere version. Si une future version
+          # alourdit R.wasm ou casse le service worker, epingler une version
+          # connue-fonctionnelle en remplacant par exemple par « shinylive@0.4.1 ».
           packages: |
             any::shinylive
             any::base64enc
