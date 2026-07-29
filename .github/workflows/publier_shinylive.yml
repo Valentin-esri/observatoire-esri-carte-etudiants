@@ -70,15 +70,12 @@ jobs:
       - name: Installer shinylive
         uses: r-lib/actions/setup-r-dependencies@v2
         with:
-          # VERSION EPINGLEE. any::shinylive installait la 0.5.0, qui embarque
-          # webR 0.6.0 / R 4.6.0 : pour cette version tres recente, les binaires
-          # WebAssembly de certains paquets (ggplot2, leaflet, officer...) ne sont
-          # pas encore tous disponibles, d ou l echec « preload error » en cascade
-          # et une application qui ne demarre jamais. On epingle donc la 0.4.1
-          # (assets v0.10.8), sous laquelle tous les paquets sont disponibles.
-          # A relever prudemment quand l ecosysteme webR aura rattrape R 4.6.
+          # Le PACKAGE shinylive peut rester recent : ce qui compte pour la
+          # compatibilite des binaires, c est la version des ASSETS webR, figee
+          # plus bas via assets_version. Un package recent sait telecharger
+          # d anciens assets (c est la raison d etre du parametre).
           packages: |
-            shinylive@0.4.1
+            any::shinylive
             any::base64enc
 
       # Contrôle non bloquant : indique lesquelles des bibliothèques utilisées
@@ -150,9 +147,14 @@ jobs:
               accueil <- gsub("__LOGO_DISPLAY__",  "none", accueil, fixed = TRUE)
               cat("Aucun logo trouve dans app/www : ecran sans logo.\n")
             }
+            # assets_version FIGE la version des assets webR (donc de R et des
+            # binaires de paquets). On evite ainsi que le dépôt webR courant,
+            # passe a R 4.6, ne casse le prechargement. 0.10.5 = webR 0.5.5,
+            # version murie ou tous nos paquets ont un binaire WebAssembly.
             shinylive::export("app", "site",
                               wasm_packages   = TRUE,
                               max_filesize    = "300M",
+                              assets_version  = "0.10.5",
                               template_params = list(
                                 title              = "Cartographie des etudiants en Normandie",
                                 include_before_body = accueil
