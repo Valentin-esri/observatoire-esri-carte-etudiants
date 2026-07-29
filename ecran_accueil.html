@@ -1,0 +1,128 @@
+<!--
+  Écran d'accueil affiché PENDANT le chargement de l'application.
+  Inséré par Shinylive via template_params$include_before_body, juste après
+  l'ouverture de <body>. Il s'affiche donc instantanément, avant même que le
+  moteur R ne commence à se télécharger.
+
+  Quand l'application Shiny prend la main, elle rend son interface dans le même
+  <body> ; on masque alors cet écran automatiquement : un observateur détecte
+  l'apparition du conteneur Shiny et déclenche un fondu de disparition.
+
+  Aucune dépendance externe : tout est en ligne (styles et script), rien n'est
+  téléchargé, l'écran ne dépend pas du réseau une fois la page servie.
+-->
+<div id="ecran-chargement-obs" role="status" aria-live="polite"
+     style="position:fixed; inset:0; z-index:99999;
+            display:flex; flex-direction:column;
+            align-items:center; justify-content:center;
+            background:#FFFFFF; font-family:Arial, Helvetica, sans-serif;
+            text-align:center; padding:24px;
+            transition:opacity 0.6s ease;">
+
+  <!-- Bandeau haut aux couleurs de la charte -->
+  <div style="position:absolute; top:0; left:0; right:0; height:6px;
+              background:linear-gradient(90deg,#003F7D 0%,#003F7D 60%,#C7102C 60%,#C7102C 100%);"></div>
+
+  <!-- Logo Region Normandie (embarque en base64 par le workflow de publication ;
+       independant de tout chemin, s'affiche donc des l'ouverture de la page).
+       Si le logo n'a pas ete injecte, l'image se retire d'elle-meme. -->
+  <img alt="Region Normandie" src="__LOGO_DATA_URI__"
+       onerror="this.style.display='none'"
+       style="height:64px; width:auto; margin-bottom:26px;
+              display:__LOGO_DISPLAY__;">
+
+  <!-- Titre -->
+  <div style="color:#003F7D; font-size:26px; font-weight:700;
+              margin-bottom:6px; line-height:1.25; max-width:640px;">
+    Cartographie des effectifs etudiants en Normandie
+  </div>
+  <div style="color:#555555; font-size:15px; margin-bottom:32px; max-width:560px;">
+    Observatoire ESRI &mdash; Region Normandie
+  </div>
+
+  <!-- Animation de chargement : trois points aux couleurs de la charte -->
+  <div style="display:flex; gap:10px; margin-bottom:26px;">
+    <span class="pt-obs" style="width:14px; height:14px; border-radius:50%;
+          background:#003F7D; display:inline-block;
+          animation:rebond-obs 1.2s ease-in-out infinite;"></span>
+    <span class="pt-obs" style="width:14px; height:14px; border-radius:50%;
+          background:#C7102C; display:inline-block;
+          animation:rebond-obs 1.2s ease-in-out 0.2s infinite;"></span>
+    <span class="pt-obs" style="width:14px; height:14px; border-radius:50%;
+          background:#003F7D; display:inline-block;
+          animation:rebond-obs 1.2s ease-in-out 0.4s infinite;"></span>
+  </div>
+
+  <!-- Message principal -->
+  <div style="color:#333333; font-size:17px; font-weight:600; margin-bottom:10px;">
+    Chargement de l&rsquo;outil en cours&hellip;
+  </div>
+
+  <!-- Explication : rend l'attente comprehensible -->
+  <div style="color:#666666; font-size:13.5px; max-width:520px; line-height:1.55;">
+    L&rsquo;application s&rsquo;execute entierement dans votre navigateur,
+    ce qui demande de telecharger l&rsquo;outil au demarrage.
+    <br><br>
+    Merci de patienter sans fermer ni recharger la page.
+  </div>
+
+  <!-- Note de bas d'ecran -->
+  <div style="position:absolute; bottom:16px; left:0; right:0;
+              color:#999999; font-size:11.5px;">
+    Navigateur recent recommande (Edge, Chrome ou Firefox a jour) &mdash;
+    de preference sur poste fixe.
+  </div>
+</div>
+
+<style>
+  @keyframes rebond-obs {
+    0%, 80%, 100% { transform:translateY(0);   opacity:0.5; }
+    40%           { transform:translateY(-12px); opacity:1;   }
+  }
+  /* Respecte le choix des personnes sensibles aux animations. */
+  @media (prefers-reduced-motion: reduce) {
+    .pt-obs { animation:none !important; opacity:0.8 !important; }
+    #ecran-chargement-obs { transition:none !important; }
+  }
+</style>
+
+<script>
+  (function () {
+    // On masque l'ecran d'accueil des que l'interface Shiny apparait.
+    // Shinylive rend l'application dans un conteneur propre a l'app ; on guette
+    // l'apparition d'un element Shiny significatif (barre d'onglets, sortie,
+    // ou le conteneur bslib de la mise en page).
+    var ecran = document.getElementById("ecran-chargement-obs");
+    if (!ecran) return;
+
+    function appPrete() {
+      // Selecteurs robustes : l'un au moins existe une fois l'app affichee.
+      return document.querySelector(
+        ".navbar, .nav-tabs, .shiny-bound-output, .bslib-page-navbar, " +
+        ".tab-content, #carte, .leaflet-container"
+      ) !== null;
+    }
+
+    function masquer() {
+      if (!ecran) return;
+      ecran.style.opacity = "0";
+      setTimeout(function () {
+        if (ecran && ecran.parentNode) ecran.parentNode.removeChild(ecran);
+      }, 700);
+    }
+
+    // 1) Verification immediate, au cas ou l'app serait deja la.
+    if (appPrete()) { masquer(); return; }
+
+    // 2) Observateur : declenche des que l'interface Shiny est inseree.
+    var obs = new MutationObserver(function () {
+      if (appPrete()) { obs.disconnect(); masquer(); }
+    });
+    obs.observe(document.body, { childList: true, subtree: true });
+
+    // 3) Filet de securite : ne jamais rester bloque indefiniment. Si, apres
+    //    5 minutes, rien n'est detecte (cas tres improbable), on retire l'ecran
+    //    pour ne pas masquer un eventuel message d'erreur de Shinylive.
+    setTimeout(function () { obs.disconnect(); masquer(); }, 300000);
+  })();
+</script>
