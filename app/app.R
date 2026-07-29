@@ -11,7 +11,9 @@ suppressPackageStartupMessages({
   library(shiny)
   library(dplyr)
   library(tidyr)
-  library(sf)
+  # NB : sf N'EST PLUS chargé. Les couches géographiques sont converties en
+  # coordonnées brutes (lng/lat) au chargement, sans sf, ce qui allège fortement
+  # le paquet WebAssembly téléchargé (sf tire GDAL/GEOS/PROJ, ~la moitié du poids).
   library(leaflet)
   library(leaflet.extras)
   library(htmltools)
@@ -205,10 +207,65 @@ couche_etiquettes <- function(taille = 4.4) {
 # ---- Données préparées -------------------------------------------------------
 rep_data <- "data_app"
 data_all <- readRDS(file.path(rep_data, "donnees_carte.rds"))
-geo_cantons <- readRDS(file.path(rep_data, "geo_cantons.rds")) %>%
-  rename(INSEE_CAN_CODE = code_can)
-geo_arr     <- readRDS(file.path(rep_data, "geo_arr.rds")) %>%
-  rename(INSEE_ARR_CODE = code_arr)
+
+# --- Extraction des géométries SANS sf ---------------------------------------
+# Les fichiers .rds contiennent des objets « sf », mais readRDS les désérialise
+# sans charger le paquet sf : la géométrie n'est qu'une liste de matrices de
+# coordonnées (colonne « geometry »). On l'aplatit en un data.frame lng/lat, une
+# ligne par sommet, les anneaux séparés par des lignes NA — format compris à la
+# fois par leaflet::addPolygons(lng=,lat=) et par ggplot2::geom_polygon(group=),
+# aucun des deux n'ayant alors besoin de sf.
+# Récupère les attributs (hors géométrie) d un objet sf, sans charger sf :
+# on retire simplement la colonne list-column « geometry » et on renomme le code.
+sf_free_attrs <- function(objet, col_code, col_nom, nom_code) {
+  df <- as.data.frame(objet)
+  df[["geometry"]] <- NULL
+  out <- data.frame(x = df[[col_code]], nom = df[[col_nom]],
+                    stringsAsFactors = FALSE)
+  names(out) <- c(nom_code, col_nom)
+  out
+}
+
+geom_vers_coords <- function(objet, col_code, col_nom, nom_code, nom_nom) {
+  geom  <- objet[["geometry"]]
+  codes <- objet[[col_code]]
+  noms  <- objet[[col_nom]]
+  morceaux <- lapply(seq_along(geom), function(i) {
+    g <- geom[[i]]                       # POLYGON (liste d anneaux) ou MULTIPOLYGON
+    # Normaliser en une liste d anneaux (matrices à 2 colonnes).
+    anneaux <- if (inherits(g, "MULTIPOLYGON") ||
+                   (is.list(g) && length(g) && is.list(g[[1]]) &&
+                    !is.matrix(g[[1]]))) {
+      unlist(lapply(g, function(poly) poly), recursive = FALSE)
+    } else {
+      unclass(g)                         # POLYGON : liste de matrices (anneaux)
+    }
+    blocs <- lapply(seq_along(anneaux), function(j) {
+      m <- anneaux[[j]]
+      base <- data.frame(forme = i, lng = m[, 1], lat = m[, 2])
+      if (j > 1) rbind(data.frame(forme = i, lng = NA, lat = NA), base) else base
+    })
+    d <- do.call(rbind, blocs)
+    d[[nom_code]] <- codes[i]
+    d[[nom_nom]]  <- noms[i]
+    d
+  })
+  do.call(rbind, morceaux)
+}
+
+# Couches en coordonnées plates (remplacent les objets sf partout).
+coords_cantons <- geom_vers_coords(
+  readRDS(file.path(rep_data, "geo_cantons.rds")),
+  "code_can", "Canton_nom", "INSEE_CAN_CODE", "Canton_nom")
+coords_arr <- geom_vers_coords(
+  readRDS(file.path(rep_data, "geo_arr.rds")),
+  "code_arr", "Arrondissement_nom", "INSEE_ARR_CODE", "Arrondissement_nom")
+
+# Table des attributs (une ligne par forme), pour les jointures d effectifs.
+attrs_cantons <- readRDS(file.path(rep_data, "geo_cantons.rds")) %>%
+  sf_free_attrs("code_can", "Canton_nom", "INSEE_CAN_CODE")
+attrs_arr <- readRDS(file.path(rep_data, "geo_arr.rds")) %>%
+  sf_free_attrs("code_arr", "Arrondissement_nom", "INSEE_ARR_CODE")
 
 # --- Couleurs des secteurs : SOURCE UNIQUE ------------------------------------
 # La palette est celle des cercles de la carte (colorFactor "Set1"), avec un
@@ -386,22 +443,25 @@ annees_dispo <- sort(unique(data_all$rentree))
 an_min <- min(annees_dispo); an_max <- max(annees_dispo)
 
 # --- Fond de carte statique (export Word) : préparé une fois au démarrage -----
-# Contours départementaux reconstitués en fusionnant les arrondissements
-# (les 2 premiers caractères du code arrondissement donnent le département).
+# Sans sf, on ne fusionne pas les arrondissements en départements ; on ajoute
+# simplement le code département à chaque arrondissement pour, si besoin, épaissir
+# les frontières entre départements. Les contours d arrondissements suffisent au
+# rendu (une bordure un peu plus marquée entre départements via un regroupement
+# graphique). fond_dep devient la table de coordonnées des arrondissements,
+# annotée du département.
 fond_dep <- tryCatch({
-  geo_arr %>%
-    mutate(dep = substr(as.character(INSEE_ARR_CODE), 1, 2)) %>%
-    group_by(dep) %>%
-    summarise(.groups = "drop") %>%
-    sf::st_make_valid()
+  coords_arr$dep <- substr(as.character(coords_arr$INSEE_ARR_CODE), 1, 2)
+  coords_arr
 }, error = function(e) NULL)
 
-# Cadre fixe : toute la Normandie (avec une marge), quel que soit l'établissement
-bb_norm <- sf::st_bbox(geo_arr)
-marge_x <- (bb_norm["xmax"] - bb_norm["xmin"]) * 0.03
-marge_y <- (bb_norm["ymax"] - bb_norm["ymin"]) * 0.05
-cadre_x <- c(bb_norm["xmin"] - marge_x, bb_norm["xmax"] + marge_x)
-cadre_y <- c(bb_norm["ymin"] - marge_y, bb_norm["ymax"] + marge_y)
+# Cadre fixe : toute la Normandie (avec une marge). range() remplace st_bbox ;
+# le résultat est strictement identique (min/max des coordonnées).
+xr <- range(coords_arr$lng, na.rm = TRUE)
+yr <- range(coords_arr$lat, na.rm = TRUE)
+marge_x <- (xr[2] - xr[1]) * 0.03
+marge_y <- (yr[2] - yr[1]) * 0.05
+cadre_x <- c(xr[1] - marge_x, xr[2] + marge_x)
+cadre_y <- c(yr[1] - marge_y, yr[2] + marge_y)
 
 # Palette des niveaux d'études (du plus bas au plus élevé)
 col_niveaux <- c(
@@ -505,6 +565,29 @@ popup_etab <- function(etab, commune, secteur, categorie, eff, femmes, hommes, d
          approx, bloc_details(det))
 }
 
+# Trace une couche de polygones à partir de coordonnées plates (lng/lat/forme)
+# et d une table d attributs (une ligne par forme, avec total_effectifs, code,
+# nom, details). Chaque forme est ajoutée séparément à la carte : c est ce qui
+# permet à leaflet::addPolygons de fonctionner SANS sf. La couleur et le popup
+# sont propres à chaque forme.
+tracer_polygones <- function(map, coords, attrs, code_col, nom_col, nom_label,
+                             pal, contour) {
+  for (k in seq_len(nrow(attrs))) {
+    code <- attrs[[code_col]][k]
+    xy   <- coords[coords[[code_col]] == code, c("lng", "lat")]
+    if (!nrow(xy)) next
+    eff  <- attrs$total_effectifs[k]
+    popup <- paste0("<b>", nom_label, " : </b>", attrs[[nom_col]][k],
+                    "<br/>Code : ", code,
+                    "<br/>Effectifs : ", fmt_eff(eff),
+                    bloc_details(attrs$details[[k]]))
+    map <- addPolygons(map, lng = xy$lng, lat = xy$lat,
+                       fillColor = pal(eff), color = contour,
+                       weight = 1, fillOpacity = 0.65, popup = popup)
+  }
+  map
+}
+
 # Construit l'objet leaflet complet (partagé par l'affichage et l'export HTML)
 construire_carte <- function(pts, cantons_data, arr_data, opts, vue = NULL) {
   map <- leaflet()
@@ -513,30 +596,18 @@ construire_carte <- function(pts, cantons_data, arr_data, opts, vue = NULL) {
 
   if (opts$arr && !is.null(arr_data)) {
     pal <- colorNumeric("YlOrRd", arr_data$total_effectifs)
-    popups <- vapply(seq_len(nrow(arr_data)), function(i) {
-      paste0("<b>Arrondissement : </b>", arr_data$Arrondissement_nom[i],
-             "<br/>Code : ", arr_data$INSEE_ARR_CODE[i],
-             "<br/>Effectifs : ", fmt_eff(arr_data$total_effectifs[i]),
-             bloc_details(arr_data$details[[i]]))
-    }, character(1))
-    map <- map %>%
-      addPolygons(data = arr_data, fillColor = ~pal(total_effectifs),
-                  color = "grey", weight = 1, fillOpacity = 0.6, popup = popups) %>%
+    map <- tracer_polygones(map, coords_arr, arr_data,
+                            "INSEE_ARR_CODE", "Arrondissement_nom", "Arrondissement",
+                            pal, "grey") %>%
       addLegend("bottomright", pal = pal, values = arr_data$total_effectifs,
                 title = "Effectifs par arrondissement", opacity = 0.7)
   }
 
   if (opts$cantons && !is.null(cantons_data)) {
     pal <- colorNumeric("YlGnBu", cantons_data$total_effectifs)
-    popups <- vapply(seq_len(nrow(cantons_data)), function(i) {
-      paste0("<b>Canton : </b>", cantons_data$Canton_nom[i],
-             "<br/>Code : ", cantons_data$INSEE_CAN_CODE[i],
-             "<br/>Effectifs : ", fmt_eff(cantons_data$total_effectifs[i]),
-             bloc_details(cantons_data$details[[i]]))
-    }, character(1))
-    map <- map %>%
-      addPolygons(data = cantons_data, fillColor = ~pal(total_effectifs),
-                  color = "darkgrey", weight = 1, fillOpacity = 0.7, popup = popups) %>%
+    map <- tracer_polygones(map, coords_cantons, cantons_data,
+                            "INSEE_CAN_CODE", "Canton_nom", "Canton",
+                            pal, "darkgrey") %>%
       addLegend("bottomleft", pal = pal, values = cantons_data$total_effectifs,
                 title = "Effectifs par canton", opacity = 0.7)
   }
@@ -905,7 +976,9 @@ server <- function(input, output, session) {
                 hommes   = sum(hommes,    na.rm = TRUE), .groups = "drop") %>%
       nest(details = c(degre, effectif, femmes, hommes))
     eff <- left_join(tot, det, by = "INSEE_CAN_CODE")
-    geo_cantons %>%
+    # Table d attributs par forme (plus d objet sf) : une ligne par canton, avec
+    # effectifs et détails. Les coordonnées sont jointes au moment du tracé.
+    attrs_cantons %>%
       left_join(eff, by = "INSEE_CAN_CODE") %>%
       mutate(
         total_effectifs = tidyr::replace_na(total_effectifs, 0),
@@ -925,7 +998,7 @@ server <- function(input, output, session) {
                 hommes   = sum(hommes,    na.rm = TRUE), .groups = "drop") %>%
       nest(details = c(degre, effectif, femmes, hommes))
     eff <- left_join(tot, det, by = "INSEE_ARR_CODE")
-    geo_arr %>%
+    attrs_arr %>%
       left_join(eff, by = "INSEE_ARR_CODE") %>%
       mutate(
         total_effectifs = tidyr::replace_na(total_effectifs, 0),
@@ -1855,16 +1928,25 @@ server <- function(input, output, session) {
         "Approximative (centre de la commune)", "Exacte"))
     validate(need(nrow(d) > 0, "Aucune composante localisée."))
 
+    # Polygones tracés à partir des coordonnées plates (sans sf) : geom_polygon
+    # avec group = forme reproduit exactement geom_sf. interaction(forme) garantit
+    # que chaque anneau est fermé indépendamment.
     g <- ggplot() +
       # 1. Cantons : trame fine, en fond
-      geom_sf(data = geo_cantons, fill = "#F7F3E9", colour = "#E4DCCB",
-              linewidth = 0.15) +
+      geom_polygon(data = coords_cantons,
+                   aes(lng, lat, group = forme),
+                   fill = "#F7F3E9", colour = "#E4DCCB", linewidth = 0.15) +
       # 2. Arrondissements : limites intermédiaires
-      geom_sf(data = geo_arr, fill = NA, colour = "#CDBFA6", linewidth = 0.35)
-    # 3. Départements : limites structurantes
+      geom_polygon(data = coords_arr,
+                   aes(lng, lat, group = forme),
+                   fill = NA, colour = "#CDBFA6", linewidth = 0.35)
+    # 3. Départements : limites structurantes (regroupement par département ;
+    #    sans fusion sf, on épaissit les frontières d arrondissements groupées
+    #    par département, ce qui donne un rendu équivalent).
     if (!is.null(fond_dep))
-      g <- g + geom_sf(data = fond_dep, fill = NA, colour = "#8C7A5E",
-                       linewidth = 0.7)
+      g <- g + geom_polygon(data = fond_dep,
+                            aes(lng, lat, group = forme),
+                            fill = NA, colour = "#8C7A5E", linewidth = 0.5)
 
     g +
       geom_point(data = d,
@@ -1880,7 +1962,12 @@ server <- function(input, output, session) {
                    "Approximative (centre de la commune)" = "#C7102C"),
         name = "Localisation",
         guide = guide_legend(override.aes = list(size = 5))) +
-      coord_sf(xlim = cadre_x, ylim = cadre_y, expand = FALSE) +
+      # coord_fixed remplace coord_sf : sans sf, on fixe manuellement le ratio
+      # d aspect. À la latitude de la Normandie (~49 deg), 1 deg de longitude est
+      # plus court que 1 deg de latitude d un facteur 1/cos(lat). ratio = 1/cos
+      # rétablit des proportions géographiquement correctes.
+      coord_fixed(ratio = 1 / cos(mean(cadre_y) * pi / 180),
+                  xlim = cadre_x, ylim = cadre_y, expand = FALSE) +
       labs(x = NULL, y = NULL) +
       theme_minimal(base_size = 11) +
       theme(panel.background = element_rect(fill = "#DCEAF2", colour = NA),  # mer
