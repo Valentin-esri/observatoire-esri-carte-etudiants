@@ -116,11 +116,13 @@ jobs:
       - name: Exporter l'application en Shinylive
         run: |
           Rscript -e '
-            accueil <- if (file.exists("ecran_accueil.html"))
+            accueil <- if (file.exists("ecran_accueil.html")) {
                          paste(readLines("ecran_accueil.html",
                                          encoding = "UTF-8", warn = FALSE),
                                collapse = "\n")
-                       else ""
+                       } else {
+                         ""
+                       }
             # Embarquer le logo en base64 : lecture du fichier de l app, encodage,
             # remplacement des marqueurs. Ainsi l ecran affiche le VRAI logo du
             # depot, sans dependre d un chemin resolu avant le demarrage de R.
