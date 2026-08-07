@@ -12,7 +12,7 @@ ou à la fin du journal du workflow « Publier l'application (Shinylive) ».
 
 Trois choses à savoir avant d'ouvrir :
 
-- **le premier chargement prend une trentaine de seconde** 
+- **le premier chargement prend une trentaine de secondes** 
 - **navigateur récent obligatoire** (Chrome, Edge ou Firefox à jour), sur poste
   fixe : l'expérience sur téléphone n'est pas exploitable ;
 - **l'export PDF du comparateur rend mal les accents** — limitation connue de R
