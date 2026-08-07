@@ -12,10 +12,7 @@ ou à la fin du journal du workflow « Publier l'application (Shinylive) ».
 
 Trois choses à savoir avant d'ouvrir :
 
-- **le premier chargement prend une à trois minutes** et télécharge plusieurs
-  dizaines de mégaoctets — l'application embarque le moteur R lui-même, qui
-  s'exécute dans votre navigateur ; les visites suivantes sont quasi
-  instantanées grâce au cache ;
+- **le premier chargement prend une trentaine de seconde** 
 - **navigateur récent obligatoire** (Chrome, Edge ou Firefox à jour), sur poste
   fixe : l'expérience sur téléphone n'est pas exploitable ;
 - **l'export PDF du comparateur rend mal les accents** — limitation connue de R
