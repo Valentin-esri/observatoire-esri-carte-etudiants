@@ -1952,7 +1952,7 @@ server <- function(input, output, session) {
       arrange(Composante, factor(`Niveau`, levels = niveaux_ordre))
     datatable(d, filter = "top", rownames = FALSE,
               options = list(pageLength = 15, scrollX = TRUE))
-  }, server = FALSE)
+  })
 
   # ===========================================================================
   #  ONGLET SYNTHÈSE RÉGIONALE
@@ -2013,7 +2013,7 @@ server <- function(input, output, session) {
     t <- bind_rows(t, tibble(`Niveau d'études` = "Total",
                              Effectifs = fmt_eff(tot), `Part` = "100,0 %"))
     dt_synth(t)
-  }, server = FALSE)
+  })
 
   # ---- Tableau : sexe × niveau (= graphique p_sexe) -------------------------
   output$synth_sexe_niveau <- renderDT({
@@ -2037,7 +2037,7 @@ server <- function(input, output, session) {
                              `% hommes` = col_part(th / tt)))
     dt_synth(t %>% select(`Niveau d'études`, Femmes, `% femmes`,
                           Hommes, `% hommes`, Total))
-  }, server = FALSE)
+  })
 
   # ---- Tableau : par secteur (= graphique p_secteur) ------------------------
   output$synth_secteur <- renderDT({
@@ -2055,7 +2055,7 @@ server <- function(input, output, session) {
              Effectifs = fmt_eff(Effectifs),
              Femmes = fmt_eff(Femmes), Hommes = fmt_eff(Hommes))
     dt_synth(t %>% select(Secteur, Effectifs, `Part`, Femmes, `% femmes`, Hommes))
-  }, server = FALSE)
+  })
 
   # ---- Tableau : par catégorie d'établissement (= graphique p_cat) ----------
   output$synth_categorie <- renderDT({
@@ -2074,7 +2074,7 @@ server <- function(input, output, session) {
              Femmes = fmt_eff(Femmes), Hommes = fmt_eff(Hommes))
     dt_synth(t %>% select(`Catégorie d'établissement`, Effectifs, `Part`,
                           Femmes, `% femmes`, Hommes), page = 15)
-  }, server = FALSE)
+  })
 
   # ---- Tableau : catégorie × sexe (= graphique p_cat_sexe) ------------------
   output$synth_cat_sexe <- renderDT({
@@ -2092,7 +2092,7 @@ server <- function(input, output, session) {
              Total = fmt_eff(Total))
     dt_synth(t %>% select(`Catégorie d'établissement`, Femmes, `% femmes`,
                           Hommes, `% hommes`, Total), page = 15)
-  }, server = FALSE)
+  })
 
   # ---- Tableau : catégorie × secteur (= graphique p_cat_secteur) ------------
   output$synth_cat_secteur <- renderDT({
@@ -2113,7 +2113,7 @@ server <- function(input, output, session) {
     for (cc in c(secteurs_pres, "Total"))
       t[[cc]] <- fmt_eff(t[[cc]])
     dt_synth(t, page = 15)
-  }, server = FALSE)
+  })
 
   # ---- Tableau : par unité urbaine (= graphique p_uu) -----------------------
   output$synth_uu <- renderDT({
@@ -2132,7 +2132,7 @@ server <- function(input, output, session) {
              Femmes = fmt_eff(Femmes), Hommes = fmt_eff(Hommes))
     dt_synth(t %>% select(`Unité urbaine`, Effectifs, `Part`, Femmes, Hommes),
              page = 15)
-  }, server = FALSE)
+  })
 
   # --- Carte statique (pour l'export Word) : fond souverain, sans tuiles web ---
   #  Cadre FIXE sur toute la Normandie (lisible quel que soit l'établissement,
@@ -2490,7 +2490,7 @@ server <- function(input, output, session) {
     datatable(comp_resume(), rownames = FALSE,
               options = list(dom = "t", pageLength = 10, ordering = FALSE,
                              scrollX = TRUE))
-  }, server = FALSE)
+  })
 
   p_comp_evol <- reactive({
     d <- comp_data() %>% filtre_periode(input$per_compar) %>%
@@ -2880,7 +2880,7 @@ server <- function(input, output, session) {
       formatStyle("Secteur",
                   color = styleEqual(c("Public", "Privé"), c("#003F7D", "#C7102C")),
                   fontWeight = "bold")
-  }, server = FALSE)
+  })
 
   output$tableau <- renderDT({
     datatable(
@@ -2891,7 +2891,7 @@ server <- function(input, output, session) {
         arrange(desc(effectifs)),
       options = list(pageLength = 15, scrollX = TRUE), rownames = FALSE
     )
-  }, server = FALSE)
+  })
 
   output$export_map <- downloadHandler(
     filename = function() paste0("Carte_Etudiants_Normandie_", input$rentree, "_",
