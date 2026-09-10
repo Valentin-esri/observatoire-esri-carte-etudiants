@@ -758,43 +758,84 @@ ui <- fluidPage(
       width = 10,
       tabsetPanel(
         tabPanel("Carte", leafletOutput("carte", height = "calc(100vh - 165px)")),
-        tabPanel("Graphiques",
-          tabsetPanel(id = "onglet_graph",
-            tabPanel("Niveau d'études",       value = "niveau",       plotOutput("g_niveau",      height = 480)),
-            tabPanel("Sexe × niveau",         value = "sexe",         plotOutput("g_sexe",        height = 480)),
-            tabPanel("Secteur",               value = "secteur",      plotOutput("g_secteur",     height = 420)),
-            tabPanel("Secteur × niveau",      value = "sec_niveau",   plotOutput("g_sec_niveau",  height = 520)),
-            tabPanel("Catégorie",             value = "cat",          plotOutput("g_cat",         height = 620)),
-            tabPanel("Catégorie × sexe",      value = "cat_sexe",     plotOutput("g_cat_sexe",    height = 760)),
-            tabPanel("Catégorie × secteur",   value = "cat_secteur",  plotOutput("g_cat_secteur", height = 760)),
-            tabPanel("Unités urbaines",       value = "uu",           plotOutput("g_uu",          height = 1600)),
-            tabPanel("Évolution — sexe", value = "evol",
-              tags$div(style = "margin-top:10px; max-width:520px;",
-                       sliderInput("per_evol", "Période affichée :",
-                                   min = an_min, max = an_max,
-                                   value = c(an_min, an_max), step = 1, sep = "")),
-              plotOutput("g_evol", height = 620)),
-            tabPanel("Évolution — secteur", value = "evol_secteur",
-              tags$div(style = "margin-top:10px; max-width:520px;",
-                       sliderInput("per_evol_secteur", "Période affichée :",
-                                   min = an_min, max = an_max,
-                                   value = c(an_min, an_max), step = 1, sep = "")),
-              plotOutput("g_evol_secteur", height = 680)),
-            tabPanel("Évolution — niveau", value = "evol_niveau",
-              tags$div(style = "margin-top:10px; max-width:520px;",
-                       sliderInput("per_evol_niveau", "Période affichée :",
-                                   min = an_min, max = an_max,
-                                   value = c(an_min, an_max), step = 1, sep = "")),
-              plotOutput("g_evol_niveau", height = 820)),
-            tabPanel("Évolution — catégorie", value = "evol_cat",
-              tags$div(style = "margin-top:10px; max-width:520px;",
-                       sliderInput("per_evol_cat", "Période affichée :",
-                                   min = an_min, max = an_max,
-                                   value = c(an_min, an_max), step = 1, sep = "")),
-              plotOutput("g_evol_cat", height = 1250))
-            # NB : le sous-onglet « Composantes d'un établissement » a été
-            # rapatrié dans la Fiche établissement, où il partage le sélecteur
-            # de la fiche au lieu d'en imposer un second.
+        tabPanel("Synthèse régionale",
+          tabsetPanel(
+            tabPanel("Graphiques",
+              tabsetPanel(id = "onglet_graph",
+                tabPanel("Niveau d'études",       value = "niveau",       plotOutput("g_niveau",      height = 480)),
+                tabPanel("Sexe × niveau",         value = "sexe",         plotOutput("g_sexe",        height = 480)),
+                tabPanel("Secteur",               value = "secteur",      plotOutput("g_secteur",     height = 420)),
+                tabPanel("Secteur × niveau",      value = "sec_niveau",   plotOutput("g_sec_niveau",  height = 520)),
+                tabPanel("Catégorie",             value = "cat",          plotOutput("g_cat",         height = 620)),
+                tabPanel("Catégorie × sexe",      value = "cat_sexe",     plotOutput("g_cat_sexe",    height = 760)),
+                tabPanel("Catégorie × secteur",   value = "cat_secteur",  plotOutput("g_cat_secteur", height = 760)),
+                tabPanel("Unités urbaines",       value = "uu",           plotOutput("g_uu",          height = 1600)),
+                tabPanel("Évolution — sexe", value = "evol",
+                  tags$div(style = "margin-top:10px; max-width:520px;",
+                           sliderInput("per_evol", "Période affichée :",
+                                       min = an_min, max = an_max,
+                                       value = c(an_min, an_max), step = 1, sep = "")),
+                  plotOutput("g_evol", height = 620)),
+                tabPanel("Évolution — secteur", value = "evol_secteur",
+                  tags$div(style = "margin-top:10px; max-width:520px;",
+                           sliderInput("per_evol_secteur", "Période affichée :",
+                                       min = an_min, max = an_max,
+                                       value = c(an_min, an_max), step = 1, sep = "")),
+                  plotOutput("g_evol_secteur", height = 680)),
+                tabPanel("Évolution — niveau", value = "evol_niveau",
+                  tags$div(style = "margin-top:10px; max-width:520px;",
+                           sliderInput("per_evol_niveau", "Période affichée :",
+                                       min = an_min, max = an_max,
+                                       value = c(an_min, an_max), step = 1, sep = "")),
+                  plotOutput("g_evol_niveau", height = 820)),
+                tabPanel("Évolution — catégorie", value = "evol_cat",
+                  tags$div(style = "margin-top:10px; max-width:520px;",
+                           sliderInput("per_evol_cat", "Période affichée :",
+                                       min = an_min, max = an_max,
+                                       value = c(an_min, an_max), step = 1, sep = "")),
+                  plotOutput("g_evol_cat", height = 1250))
+                # NB : le sous-onglet « Composantes d'un établissement » a été
+                # rapatrié dans la Fiche établissement, où il partage le sélecteur
+                # de la fiche au lieu d'en imposer un second.
+              )
+            ),
+            tabPanel("Tableaux",
+              tags$div(style = "margin-top:12px;",
+                tags$p(style = "color:#555; font-size:13px; margin-bottom:10px;",
+                       "Les grands chiffres des effectifs étudiants en Normandie ",
+                       "pour la rentrée sélectionnée, présentés en tableaux. ",
+                       "Ces données correspondent à celles de l'onglet Graphiques ",
+                       "et suivent les filtres actifs."),
+                uiOutput("synth_kpi"),
+                tags$div(style = "margin:6px 0 4px;",
+                         downloadButton("export_synthese",
+                                        "Exporter la synthèse (Word)",
+                                        class = "btn-primary")),
+                tags$hr(),
+                tags$h4("Répartition par niveau d'études",
+                        style = "color:#003F7D; font-weight:700; margin-top:14px;"),
+                DTOutput("synth_niveau"),
+                tags$h4("Répartition par sexe et par niveau d'études",
+                        style = "color:#003F7D; font-weight:700; margin-top:24px;"),
+                DTOutput("synth_sexe_niveau"),
+                tags$h4("Répartition par secteur",
+                        style = "color:#003F7D; font-weight:700; margin-top:24px;"),
+                DTOutput("synth_secteur"),
+                tags$h4("Répartition par catégorie d'établissement",
+                        style = "color:#003F7D; font-weight:700; margin-top:24px;"),
+                DTOutput("synth_categorie"),
+                tags$h4("Répartition par catégorie et par sexe",
+                        style = "color:#003F7D; font-weight:700; margin-top:24px;"),
+                DTOutput("synth_cat_sexe"),
+                tags$h4("Répartition par catégorie et par secteur",
+                        style = "color:#003F7D; font-weight:700; margin-top:24px;"),
+                DTOutput("synth_cat_secteur"),
+                tags$h4("Répartition par unité urbaine",
+                        style = "color:#003F7D; font-weight:700; margin-top:24px;"),
+                DTOutput("synth_uu"),
+                tags$div(style = "height:24px;")
+              )
+            )
           )
         ),
         tabPanel("Fiche établissement",
@@ -857,43 +898,6 @@ ui <- fluidPage(
                     style = "color:#003F7D; font-weight:700; margin-top:18px;"),
             DTOutput("fiche_table"),
             tags$div(style = "height:20px;")
-          )
-        ),
-        tabPanel("Synthèse régionale",
-          tags$div(style = "margin-top:12px;",
-            tags$p(style = "color:#555; font-size:13px; margin-bottom:10px;",
-                   "Les grands chiffres des effectifs étudiants en Normandie ",
-                   "pour la rentrée sélectionnée, présentés en tableaux. ",
-                   "Ces données correspondent à celles de l'onglet Graphiques ",
-                   "et suivent les filtres actifs."),
-            uiOutput("synth_kpi"),
-            tags$div(style = "margin:6px 0 4px;",
-                     downloadButton("export_synthese",
-                                    "Exporter la synthèse (Word)",
-                                    class = "btn-primary")),
-            tags$hr(),
-            tags$h4("Répartition par niveau d'études",
-                    style = "color:#003F7D; font-weight:700; margin-top:14px;"),
-            DTOutput("synth_niveau"),
-            tags$h4("Répartition par sexe et par niveau d'études",
-                    style = "color:#003F7D; font-weight:700; margin-top:24px;"),
-            DTOutput("synth_sexe_niveau"),
-            tags$h4("Répartition par secteur",
-                    style = "color:#003F7D; font-weight:700; margin-top:24px;"),
-            DTOutput("synth_secteur"),
-            tags$h4("Répartition par catégorie d'établissement",
-                    style = "color:#003F7D; font-weight:700; margin-top:24px;"),
-            DTOutput("synth_categorie"),
-            tags$h4("Répartition par catégorie et par sexe",
-                    style = "color:#003F7D; font-weight:700; margin-top:24px;"),
-            DTOutput("synth_cat_sexe"),
-            tags$h4("Répartition par catégorie et par secteur",
-                    style = "color:#003F7D; font-weight:700; margin-top:24px;"),
-            DTOutput("synth_cat_secteur"),
-            tags$h4("Répartition par unité urbaine",
-                    style = "color:#003F7D; font-weight:700; margin-top:24px;"),
-            DTOutput("synth_uu"),
-            tags$div(style = "height:24px;")
           )
         ),
         tabPanel("Comparateur",
@@ -1948,7 +1952,7 @@ server <- function(input, output, session) {
       arrange(Composante, factor(`Niveau`, levels = niveaux_ordre))
     datatable(d, filter = "top", rownames = FALSE,
               options = list(pageLength = 15, scrollX = TRUE))
-  })
+  }, server = FALSE)
 
   # ===========================================================================
   #  ONGLET SYNTHÈSE RÉGIONALE
@@ -2009,7 +2013,7 @@ server <- function(input, output, session) {
     t <- bind_rows(t, tibble(`Niveau d'études` = "Total",
                              Effectifs = fmt_eff(tot), `Part` = "100,0 %"))
     dt_synth(t)
-  })
+  }, server = FALSE)
 
   # ---- Tableau : sexe × niveau (= graphique p_sexe) -------------------------
   output$synth_sexe_niveau <- renderDT({
@@ -2033,7 +2037,7 @@ server <- function(input, output, session) {
                              `% hommes` = col_part(th / tt)))
     dt_synth(t %>% select(`Niveau d'études`, Femmes, `% femmes`,
                           Hommes, `% hommes`, Total))
-  })
+  }, server = FALSE)
 
   # ---- Tableau : par secteur (= graphique p_secteur) ------------------------
   output$synth_secteur <- renderDT({
@@ -2051,7 +2055,7 @@ server <- function(input, output, session) {
              Effectifs = fmt_eff(Effectifs),
              Femmes = fmt_eff(Femmes), Hommes = fmt_eff(Hommes))
     dt_synth(t %>% select(Secteur, Effectifs, `Part`, Femmes, `% femmes`, Hommes))
-  })
+  }, server = FALSE)
 
   # ---- Tableau : par catégorie d'établissement (= graphique p_cat) ----------
   output$synth_categorie <- renderDT({
@@ -2070,7 +2074,7 @@ server <- function(input, output, session) {
              Femmes = fmt_eff(Femmes), Hommes = fmt_eff(Hommes))
     dt_synth(t %>% select(`Catégorie d'établissement`, Effectifs, `Part`,
                           Femmes, `% femmes`, Hommes), page = 15)
-  })
+  }, server = FALSE)
 
   # ---- Tableau : catégorie × sexe (= graphique p_cat_sexe) ------------------
   output$synth_cat_sexe <- renderDT({
@@ -2088,7 +2092,7 @@ server <- function(input, output, session) {
              Total = fmt_eff(Total))
     dt_synth(t %>% select(`Catégorie d'établissement`, Femmes, `% femmes`,
                           Hommes, `% hommes`, Total), page = 15)
-  })
+  }, server = FALSE)
 
   # ---- Tableau : catégorie × secteur (= graphique p_cat_secteur) ------------
   output$synth_cat_secteur <- renderDT({
@@ -2109,7 +2113,7 @@ server <- function(input, output, session) {
     for (cc in c(secteurs_pres, "Total"))
       t[[cc]] <- fmt_eff(t[[cc]])
     dt_synth(t, page = 15)
-  })
+  }, server = FALSE)
 
   # ---- Tableau : par unité urbaine (= graphique p_uu) -----------------------
   output$synth_uu <- renderDT({
@@ -2128,7 +2132,7 @@ server <- function(input, output, session) {
              Femmes = fmt_eff(Femmes), Hommes = fmt_eff(Hommes))
     dt_synth(t %>% select(`Unité urbaine`, Effectifs, `Part`, Femmes, Hommes),
              page = 15)
-  })
+  }, server = FALSE)
 
   # --- Carte statique (pour l'export Word) : fond souverain, sans tuiles web ---
   #  Cadre FIXE sur toute la Normandie (lisible quel que soit l'établissement,
@@ -2486,7 +2490,7 @@ server <- function(input, output, session) {
     datatable(comp_resume(), rownames = FALSE,
               options = list(dom = "t", pageLength = 10, ordering = FALSE,
                              scrollX = TRUE))
-  })
+  }, server = FALSE)
 
   p_comp_evol <- reactive({
     d <- comp_data() %>% filtre_periode(input$per_compar) %>%
@@ -2876,7 +2880,7 @@ server <- function(input, output, session) {
       formatStyle("Secteur",
                   color = styleEqual(c("Public", "Privé"), c("#003F7D", "#C7102C")),
                   fontWeight = "bold")
-  })
+  }, server = FALSE)
 
   output$tableau <- renderDT({
     datatable(
@@ -2887,7 +2891,7 @@ server <- function(input, output, session) {
         arrange(desc(effectifs)),
       options = list(pageLength = 15, scrollX = TRUE), rownames = FALSE
     )
-  })
+  }, server = FALSE)
 
   output$export_map <- downloadHandler(
     filename = function() paste0("Carte_Etudiants_Normandie_", input$rentree, "_",
