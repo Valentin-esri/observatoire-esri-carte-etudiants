@@ -758,84 +758,43 @@ ui <- fluidPage(
       width = 10,
       tabsetPanel(
         tabPanel("Carte", leafletOutput("carte", height = "calc(100vh - 165px)")),
-        tabPanel("Synthèse régionale",
-          tabsetPanel(
-            tabPanel("Graphiques",
-              tabsetPanel(id = "onglet_graph",
-                tabPanel("Niveau d'études",       value = "niveau",       plotOutput("g_niveau",      height = 480)),
-                tabPanel("Sexe × niveau",         value = "sexe",         plotOutput("g_sexe",        height = 480)),
-                tabPanel("Secteur",               value = "secteur",      plotOutput("g_secteur",     height = 420)),
-                tabPanel("Secteur × niveau",      value = "sec_niveau",   plotOutput("g_sec_niveau",  height = 520)),
-                tabPanel("Catégorie",             value = "cat",          plotOutput("g_cat",         height = 620)),
-                tabPanel("Catégorie × sexe",      value = "cat_sexe",     plotOutput("g_cat_sexe",    height = 760)),
-                tabPanel("Catégorie × secteur",   value = "cat_secteur",  plotOutput("g_cat_secteur", height = 760)),
-                tabPanel("Unités urbaines",       value = "uu",           plotOutput("g_uu",          height = 1600)),
-                tabPanel("Évolution — sexe", value = "evol",
-                  tags$div(style = "margin-top:10px; max-width:520px;",
-                           sliderInput("per_evol", "Période affichée :",
-                                       min = an_min, max = an_max,
-                                       value = c(an_min, an_max), step = 1, sep = "")),
-                  plotOutput("g_evol", height = 620)),
-                tabPanel("Évolution — secteur", value = "evol_secteur",
-                  tags$div(style = "margin-top:10px; max-width:520px;",
-                           sliderInput("per_evol_secteur", "Période affichée :",
-                                       min = an_min, max = an_max,
-                                       value = c(an_min, an_max), step = 1, sep = "")),
-                  plotOutput("g_evol_secteur", height = 680)),
-                tabPanel("Évolution — niveau", value = "evol_niveau",
-                  tags$div(style = "margin-top:10px; max-width:520px;",
-                           sliderInput("per_evol_niveau", "Période affichée :",
-                                       min = an_min, max = an_max,
-                                       value = c(an_min, an_max), step = 1, sep = "")),
-                  plotOutput("g_evol_niveau", height = 820)),
-                tabPanel("Évolution — catégorie", value = "evol_cat",
-                  tags$div(style = "margin-top:10px; max-width:520px;",
-                           sliderInput("per_evol_cat", "Période affichée :",
-                                       min = an_min, max = an_max,
-                                       value = c(an_min, an_max), step = 1, sep = "")),
-                  plotOutput("g_evol_cat", height = 1250))
-                # NB : le sous-onglet « Composantes d'un établissement » a été
-                # rapatrié dans la Fiche établissement, où il partage le sélecteur
-                # de la fiche au lieu d'en imposer un second.
-              )
-            ),
-            tabPanel("Tableaux",
-              tags$div(style = "margin-top:12px;",
-                tags$p(style = "color:#555; font-size:13px; margin-bottom:10px;",
-                       "Les grands chiffres des effectifs étudiants en Normandie ",
-                       "pour la rentrée sélectionnée, présentés en tableaux. ",
-                       "Ces données correspondent à celles de l'onglet Graphiques ",
-                       "et suivent les filtres actifs."),
-                uiOutput("synth_kpi"),
-                tags$div(style = "margin:6px 0 4px;",
-                         downloadButton("export_synthese",
-                                        "Exporter la synthèse (Word)",
-                                        class = "btn-primary")),
-                tags$hr(),
-                tags$h4("Répartition par niveau d'études",
-                        style = "color:#003F7D; font-weight:700; margin-top:14px;"),
-                DTOutput("synth_niveau"),
-                tags$h4("Répartition par sexe et par niveau d'études",
-                        style = "color:#003F7D; font-weight:700; margin-top:24px;"),
-                DTOutput("synth_sexe_niveau"),
-                tags$h4("Répartition par secteur",
-                        style = "color:#003F7D; font-weight:700; margin-top:24px;"),
-                DTOutput("synth_secteur"),
-                tags$h4("Répartition par catégorie d'établissement",
-                        style = "color:#003F7D; font-weight:700; margin-top:24px;"),
-                DTOutput("synth_categorie"),
-                tags$h4("Répartition par catégorie et par sexe",
-                        style = "color:#003F7D; font-weight:700; margin-top:24px;"),
-                DTOutput("synth_cat_sexe"),
-                tags$h4("Répartition par catégorie et par secteur",
-                        style = "color:#003F7D; font-weight:700; margin-top:24px;"),
-                DTOutput("synth_cat_secteur"),
-                tags$h4("Répartition par unité urbaine",
-                        style = "color:#003F7D; font-weight:700; margin-top:24px;"),
-                DTOutput("synth_uu"),
-                tags$div(style = "height:24px;")
-              )
-            )
+        tabPanel("Graphiques",
+          tabsetPanel(id = "onglet_graph",
+            tabPanel("Niveau d'études",       value = "niveau",       plotOutput("g_niveau",      height = 480)),
+            tabPanel("Sexe × niveau",         value = "sexe",         plotOutput("g_sexe",        height = 480)),
+            tabPanel("Secteur",               value = "secteur",      plotOutput("g_secteur",     height = 420)),
+            tabPanel("Secteur × niveau",      value = "sec_niveau",   plotOutput("g_sec_niveau",  height = 520)),
+            tabPanel("Catégorie",             value = "cat",          plotOutput("g_cat",         height = 620)),
+            tabPanel("Catégorie × sexe",      value = "cat_sexe",     plotOutput("g_cat_sexe",    height = 760)),
+            tabPanel("Catégorie × secteur",   value = "cat_secteur",  plotOutput("g_cat_secteur", height = 760)),
+            tabPanel("Unités urbaines",       value = "uu",           plotOutput("g_uu",          height = 1600)),
+            tabPanel("Évolution — sexe", value = "evol",
+              tags$div(style = "margin-top:10px; max-width:520px;",
+                       sliderInput("per_evol", "Période affichée :",
+                                   min = an_min, max = an_max,
+                                   value = c(an_min, an_max), step = 1, sep = "")),
+              plotOutput("g_evol", height = 620)),
+            tabPanel("Évolution — secteur", value = "evol_secteur",
+              tags$div(style = "margin-top:10px; max-width:520px;",
+                       sliderInput("per_evol_secteur", "Période affichée :",
+                                   min = an_min, max = an_max,
+                                   value = c(an_min, an_max), step = 1, sep = "")),
+              plotOutput("g_evol_secteur", height = 680)),
+            tabPanel("Évolution — niveau", value = "evol_niveau",
+              tags$div(style = "margin-top:10px; max-width:520px;",
+                       sliderInput("per_evol_niveau", "Période affichée :",
+                                   min = an_min, max = an_max,
+                                   value = c(an_min, an_max), step = 1, sep = "")),
+              plotOutput("g_evol_niveau", height = 820)),
+            tabPanel("Évolution — catégorie", value = "evol_cat",
+              tags$div(style = "margin-top:10px; max-width:520px;",
+                       sliderInput("per_evol_cat", "Période affichée :",
+                                   min = an_min, max = an_max,
+                                   value = c(an_min, an_max), step = 1, sep = "")),
+              plotOutput("g_evol_cat", height = 1250))
+            # NB : le sous-onglet « Composantes d'un établissement » a été
+            # rapatrié dans la Fiche établissement, où il partage le sélecteur
+            # de la fiche au lieu d'en imposer un second.
           )
         ),
         tabPanel("Fiche établissement",
@@ -898,6 +857,43 @@ ui <- fluidPage(
                     style = "color:#003F7D; font-weight:700; margin-top:18px;"),
             DTOutput("fiche_table"),
             tags$div(style = "height:20px;")
+          )
+        ),
+        tabPanel("Synth\u00e8se r\u00e9gionale",
+          tags$div(style = "margin-top:12px;",
+            tags$p(style = "color:#555; font-size:13px; margin-bottom:10px;",
+                   "Les grands chiffres des effectifs \u00e9tudiants en Normandie ",
+                   "pour la rentr\u00e9e s\u00e9lectionn\u00e9e, pr\u00e9sent\u00e9s en tableaux. ",
+                   "Ces donn\u00e9es correspondent \u00e0 celles de l'onglet Graphiques ",
+                   "et suivent les filtres actifs."),
+            uiOutput("synth_kpi"),
+            tags$div(style = "margin:6px 0 4px;",
+                     downloadButton("export_synthese",
+                                    "Exporter la synth\u00e8se (Word)",
+                                    class = "btn-primary")),
+            tags$hr(),
+            tags$h4("R\u00e9partition par niveau d'\u00e9tudes",
+                    style = "color:#003F7D; font-weight:700; margin-top:14px;"),
+            DTOutput("synth_niveau"),
+            tags$h4("R\u00e9partition par sexe et par niveau d'\u00e9tudes",
+                    style = "color:#003F7D; font-weight:700; margin-top:24px;"),
+            DTOutput("synth_sexe_niveau"),
+            tags$h4("R\u00e9partition par secteur",
+                    style = "color:#003F7D; font-weight:700; margin-top:24px;"),
+            DTOutput("synth_secteur"),
+            tags$h4("R\u00e9partition par cat\u00e9gorie d'\u00e9tablissement",
+                    style = "color:#003F7D; font-weight:700; margin-top:24px;"),
+            DTOutput("synth_categorie"),
+            tags$h4("R\u00e9partition par cat\u00e9gorie et par sexe",
+                    style = "color:#003F7D; font-weight:700; margin-top:24px;"),
+            DTOutput("synth_cat_sexe"),
+            tags$h4("R\u00e9partition par cat\u00e9gorie et par secteur",
+                    style = "color:#003F7D; font-weight:700; margin-top:24px;"),
+            DTOutput("synth_cat_secteur"),
+            tags$h4("R\u00e9partition par unit\u00e9 urbaine",
+                    style = "color:#003F7D; font-weight:700; margin-top:24px;"),
+            DTOutput("synth_uu"),
+            tags$div(style = "height:24px;")
           )
         ),
         tabPanel("Comparateur",
@@ -990,7 +986,7 @@ server <- function(input, output, session) {
   bandeau_restriction <- function(sel, dimension) {
     if (!actif(sel)) return(NULL)
     annotate("label", x = Inf, y = Inf, hjust = 1.02, vjust = 1.4,
-             label = paste0("⚠ Restreint à ", length(sel), " ", dimension,
+             label = paste0("\u26A0 Restreint à ", length(sel), " ", dimension,
                             " sélectionné", if (length(sel) > 1) "s" else "",
                             " : ", paste(sel, collapse = ", ")),
              fill = "#C7102C", colour = "white", fontface = "bold",
@@ -1989,12 +1985,12 @@ server <- function(input, output, session) {
                  valeur)))
     }
     fluidRow(
-      boite("Total étudiants inscrits", fmt_eff(tot)),
+      boite("Total \u00e9tudiants inscrits", fmt_eff(tot)),
       boite("Femmes", paste0(fmt_eff(f), " (", col_part(f / tot), ")"), "#C7102C"),
       boite("Hommes", paste0(fmt_eff(h), " (", col_part(h / tot), ")"), "#003F7D"),
-      boite("Établissements", as.character(n_distinct(d$uai_etab)), "#333333"),
+      boite("\u00c9tablissements", as.character(n_distinct(d$uai_etab)), "#333333"),
       boite("Communes", as.character(n_distinct(d$commune)), "#333333"),
-      boite("Catégories", as.character(n_distinct(d$categorie)), "#333333")
+      boite("Cat\u00e9gories", as.character(n_distinct(d$categorie)), "#333333")
     )
   })
 
@@ -2003,15 +1999,15 @@ server <- function(input, output, session) {
     d <- data_filtree()
     tot <- sum(d$effectifs, na.rm = TRUE)
     t <- d %>%
-      group_by(`Niveau d'études` = degre) %>%
+      group_by(`Niveau d'\u00e9tudes` = degre) %>%
       summarise(Effectifs = sum(effectifs, na.rm = TRUE), .groups = "drop") %>%
       filter(Effectifs > 0) %>%
-      arrange(factor(`Niveau d'études`, levels = niveaux_ordre)) %>%
+      arrange(factor(`Niveau d'\u00e9tudes`, levels = niveaux_ordre)) %>%
       mutate(`Part` = col_part(Effectifs / tot),
              Effectifs = fmt_eff(Effectifs))
     # Ligne de total
-    t <- bind_rows(t, tibble(`Niveau d'études` = "Total",
-                             Effectifs = fmt_eff(tot), `Part` = "100,0 %"))
+    t <- bind_rows(t, tibble(`Niveau d'\u00e9tudes` = "Total",
+                             Effectifs = fmt_eff(tot), `Part` = "100,0\u00a0%"))
     dt_synth(t)
   })
 
@@ -2019,23 +2015,23 @@ server <- function(input, output, session) {
   output$synth_sexe_niveau <- renderDT({
     d <- data_filtree()
     t <- d %>%
-      group_by(`Niveau d'études` = degre) %>%
+      group_by(`Niveau d'\u00e9tudes` = degre) %>%
       summarise(Femmes = sum(femmes, na.rm = TRUE),
                 Hommes = sum(hommes, na.rm = TRUE), .groups = "drop") %>%
       mutate(Total = Femmes + Hommes) %>%
       filter(Total > 0) %>%
-      arrange(factor(`Niveau d'études`, levels = niveaux_ordre)) %>%
+      arrange(factor(`Niveau d'\u00e9tudes`, levels = niveaux_ordre)) %>%
       mutate(`% femmes` = col_part(Femmes / Total),
              `% hommes` = col_part(Hommes / Total),
              Femmes = fmt_eff(Femmes), Hommes = fmt_eff(Hommes),
              Total  = fmt_eff(Total))
     tf <- sum(d$femmes, na.rm = TRUE); th <- sum(d$hommes, na.rm = TRUE); tt <- tf + th
-    t <- bind_rows(t, tibble(`Niveau d'études` = "Total",
+    t <- bind_rows(t, tibble(`Niveau d'\u00e9tudes` = "Total",
                              Femmes = fmt_eff(tf), Hommes = fmt_eff(th),
                              Total = fmt_eff(tt),
                              `% femmes` = col_part(tf / tt),
                              `% hommes` = col_part(th / tt)))
-    dt_synth(t %>% select(`Niveau d'études`, Femmes, `% femmes`,
+    dt_synth(t %>% select(`Niveau d'\u00e9tudes`, Femmes, `% femmes`,
                           Hommes, `% hommes`, Total))
   })
 
@@ -2063,7 +2059,7 @@ server <- function(input, output, session) {
     validate(need(nrow(src) > 0, MSG_VIDE))
     tot <- sum(src$effectifs, na.rm = TRUE)
     t <- src %>%
-      group_by(`Catégorie d'établissement` = categorie) %>%
+      group_by(`Cat\u00e9gorie d'\u00e9tablissement` = categorie) %>%
       summarise(Effectifs = sum(effectifs, na.rm = TRUE),
                 Femmes = sum(femmes, na.rm = TRUE),
                 Hommes = sum(hommes, na.rm = TRUE), .groups = "drop") %>%
@@ -2072,7 +2068,7 @@ server <- function(input, output, session) {
              `% femmes` = col_part(Femmes / Effectifs),
              Effectifs = fmt_eff(Effectifs),
              Femmes = fmt_eff(Femmes), Hommes = fmt_eff(Hommes))
-    dt_synth(t %>% select(`Catégorie d'établissement`, Effectifs, `Part`,
+    dt_synth(t %>% select(`Cat\u00e9gorie d'\u00e9tablissement`, Effectifs, `Part`,
                           Femmes, `% femmes`, Hommes), page = 15)
   })
 
@@ -2081,7 +2077,7 @@ server <- function(input, output, session) {
     src <- appliquer_sel(data_annee_toutes_cat(), "categorie", sel_categorie())
     validate(need(nrow(src) > 0, MSG_VIDE))
     t <- src %>%
-      group_by(`Catégorie d'établissement` = categorie) %>%
+      group_by(`Cat\u00e9gorie d'\u00e9tablissement` = categorie) %>%
       summarise(Femmes = sum(femmes, na.rm = TRUE),
                 Hommes = sum(hommes, na.rm = TRUE), .groups = "drop") %>%
       mutate(Total = Femmes + Hommes) %>%
@@ -2090,7 +2086,7 @@ server <- function(input, output, session) {
              `% hommes` = col_part(Hommes / Total),
              Femmes = fmt_eff(Femmes), Hommes = fmt_eff(Hommes),
              Total = fmt_eff(Total))
-    dt_synth(t %>% select(`Catégorie d'établissement`, Femmes, `% femmes`,
+    dt_synth(t %>% select(`Cat\u00e9gorie d'\u00e9tablissement`, Femmes, `% femmes`,
                           Hommes, `% hommes`, Total), page = 15)
   })
 
@@ -2100,13 +2096,13 @@ server <- function(input, output, session) {
                          "categorie", sel_categorie())
     validate(need(nrow(src) > 0, MSG_VIDE))
     t <- src %>%
-      group_by(`Catégorie d'établissement` = categorie, Secteur = secteur) %>%
+      group_by(`Cat\u00e9gorie d'\u00e9tablissement` = categorie, Secteur = secteur) %>%
       summarise(Effectifs = sum(effectifs, na.rm = TRUE), .groups = "drop") %>%
       filter(Effectifs > 0) %>%
       tidyr::pivot_wider(names_from = Secteur, values_from = Effectifs,
                          values_fill = 0)
     # Total par ligne + tri
-    secteurs_pres <- setdiff(names(t), "Catégorie d'établissement")
+    secteurs_pres <- setdiff(names(t), "Cat\u00e9gorie d'\u00e9tablissement")
     t <- t %>% mutate(Total = rowSums(across(all_of(secteurs_pres)))) %>%
       arrange(desc(Total))
     # Formatage des colonnes numériques
@@ -2121,8 +2117,8 @@ server <- function(input, output, session) {
     tot <- sum(d$effectifs, na.rm = TRUE)
     t <- d %>%
       mutate(unite_urbaine = ifelse(is.na(unite_urbaine) | unite_urbaine == "",
-                                    "Non renseignée", unite_urbaine)) %>%
-      group_by(`Unité urbaine` = unite_urbaine) %>%
+                                    "Non renseign\u00e9e", unite_urbaine)) %>%
+      group_by(`Unit\u00e9 urbaine` = unite_urbaine) %>%
       summarise(Effectifs = sum(effectifs, na.rm = TRUE),
                 Femmes = sum(femmes, na.rm = TRUE),
                 Hommes = sum(hommes, na.rm = TRUE), .groups = "drop") %>%
@@ -2130,7 +2126,7 @@ server <- function(input, output, session) {
       mutate(`Part` = col_part(Effectifs / tot),
              Effectifs = fmt_eff(Effectifs),
              Femmes = fmt_eff(Femmes), Hommes = fmt_eff(Hommes))
-    dt_synth(t %>% select(`Unité urbaine`, Effectifs, `Part`, Femmes, Hommes),
+    dt_synth(t %>% select(`Unit\u00e9 urbaine`, Effectifs, `Part`, Femmes, Hommes),
              page = 15)
   })
 
