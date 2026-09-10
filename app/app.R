@@ -758,43 +758,84 @@ ui <- fluidPage(
       width = 10,
       tabsetPanel(
         tabPanel("Carte", leafletOutput("carte", height = "calc(100vh - 165px)")),
-        tabPanel("Graphiques",
-          tabsetPanel(id = "onglet_graph",
-            tabPanel("Niveau d'études",       value = "niveau",       plotOutput("g_niveau",      height = 480)),
-            tabPanel("Sexe × niveau",         value = "sexe",         plotOutput("g_sexe",        height = 480)),
-            tabPanel("Secteur",               value = "secteur",      plotOutput("g_secteur",     height = 420)),
-            tabPanel("Secteur × niveau",      value = "sec_niveau",   plotOutput("g_sec_niveau",  height = 520)),
-            tabPanel("Catégorie",             value = "cat",          plotOutput("g_cat",         height = 620)),
-            tabPanel("Catégorie × sexe",      value = "cat_sexe",     plotOutput("g_cat_sexe",    height = 760)),
-            tabPanel("Catégorie × secteur",   value = "cat_secteur",  plotOutput("g_cat_secteur", height = 760)),
-            tabPanel("Unités urbaines",       value = "uu",           plotOutput("g_uu",          height = 1600)),
-            tabPanel("Évolution — sexe", value = "evol",
-              tags$div(style = "margin-top:10px; max-width:520px;",
-                       sliderInput("per_evol", "Période affichée :",
-                                   min = an_min, max = an_max,
-                                   value = c(an_min, an_max), step = 1, sep = "")),
-              plotOutput("g_evol", height = 620)),
-            tabPanel("Évolution — secteur", value = "evol_secteur",
-              tags$div(style = "margin-top:10px; max-width:520px;",
-                       sliderInput("per_evol_secteur", "Période affichée :",
-                                   min = an_min, max = an_max,
-                                   value = c(an_min, an_max), step = 1, sep = "")),
-              plotOutput("g_evol_secteur", height = 680)),
-            tabPanel("Évolution — niveau", value = "evol_niveau",
-              tags$div(style = "margin-top:10px; max-width:520px;",
-                       sliderInput("per_evol_niveau", "Période affichée :",
-                                   min = an_min, max = an_max,
-                                   value = c(an_min, an_max), step = 1, sep = "")),
-              plotOutput("g_evol_niveau", height = 820)),
-            tabPanel("Évolution — catégorie", value = "evol_cat",
-              tags$div(style = "margin-top:10px; max-width:520px;",
-                       sliderInput("per_evol_cat", "Période affichée :",
-                                   min = an_min, max = an_max,
-                                   value = c(an_min, an_max), step = 1, sep = "")),
-              plotOutput("g_evol_cat", height = 1250))
-            # NB : le sous-onglet « Composantes d'un établissement » a été
-            # rapatrié dans la Fiche établissement, où il partage le sélecteur
-            # de la fiche au lieu d'en imposer un second.
+        tabPanel("Synthèse régionale",
+          tabsetPanel(
+            tabPanel("Graphiques",
+              tabsetPanel(id = "onglet_graph",
+                tabPanel("Niveau d'études",       value = "niveau",       plotOutput("g_niveau",      height = 480)),
+                tabPanel("Sexe × niveau",         value = "sexe",         plotOutput("g_sexe",        height = 480)),
+                tabPanel("Secteur",               value = "secteur",      plotOutput("g_secteur",     height = 420)),
+                tabPanel("Secteur × niveau",      value = "sec_niveau",   plotOutput("g_sec_niveau",  height = 520)),
+                tabPanel("Catégorie",             value = "cat",          plotOutput("g_cat",         height = 620)),
+                tabPanel("Catégorie × sexe",      value = "cat_sexe",     plotOutput("g_cat_sexe",    height = 760)),
+                tabPanel("Catégorie × secteur",   value = "cat_secteur",  plotOutput("g_cat_secteur", height = 760)),
+                tabPanel("Unités urbaines",       value = "uu",           plotOutput("g_uu",          height = 1600)),
+                tabPanel("Évolution — sexe", value = "evol",
+                  tags$div(style = "margin-top:10px; max-width:520px;",
+                           sliderInput("per_evol", "Période affichée :",
+                                       min = an_min, max = an_max,
+                                       value = c(an_min, an_max), step = 1, sep = "")),
+                  plotOutput("g_evol", height = 620)),
+                tabPanel("Évolution — secteur", value = "evol_secteur",
+                  tags$div(style = "margin-top:10px; max-width:520px;",
+                           sliderInput("per_evol_secteur", "Période affichée :",
+                                       min = an_min, max = an_max,
+                                       value = c(an_min, an_max), step = 1, sep = "")),
+                  plotOutput("g_evol_secteur", height = 680)),
+                tabPanel("Évolution — niveau", value = "evol_niveau",
+                  tags$div(style = "margin-top:10px; max-width:520px;",
+                           sliderInput("per_evol_niveau", "Période affichée :",
+                                       min = an_min, max = an_max,
+                                       value = c(an_min, an_max), step = 1, sep = "")),
+                  plotOutput("g_evol_niveau", height = 820)),
+                tabPanel("Évolution — catégorie", value = "evol_cat",
+                  tags$div(style = "margin-top:10px; max-width:520px;",
+                           sliderInput("per_evol_cat", "Période affichée :",
+                                       min = an_min, max = an_max,
+                                       value = c(an_min, an_max), step = 1, sep = "")),
+                  plotOutput("g_evol_cat", height = 1250))
+                # NB : le sous-onglet « Composantes d'un établissement » a été
+                # rapatrié dans la Fiche établissement, où il partage le sélecteur
+                # de la fiche au lieu d'en imposer un second.
+              )
+            ),
+            tabPanel("Tableaux",
+              tags$div(style = "margin-top:12px;",
+                tags$p(style = "color:#555; font-size:13px; margin-bottom:10px;",
+                       "Les grands chiffres des effectifs étudiants en Normandie ",
+                       "pour la rentrée sélectionnée, présentés en tableaux. ",
+                       "Ces données correspondent à celles de l'onglet Graphiques ",
+                       "et suivent les filtres actifs."),
+                uiOutput("synth_kpi"),
+                tags$div(style = "margin:6px 0 4px;",
+                         downloadButton("export_synthese",
+                                        "Exporter la synthèse (Word)",
+                                        class = "btn-primary")),
+                tags$hr(),
+                tags$h4("Répartition par niveau d'études",
+                        style = "color:#003F7D; font-weight:700; margin-top:14px;"),
+                DTOutput("synth_niveau"),
+                tags$h4("Répartition par sexe et par niveau d'études",
+                        style = "color:#003F7D; font-weight:700; margin-top:24px;"),
+                DTOutput("synth_sexe_niveau"),
+                tags$h4("Répartition par secteur",
+                        style = "color:#003F7D; font-weight:700; margin-top:24px;"),
+                DTOutput("synth_secteur"),
+                tags$h4("Répartition par catégorie d'établissement",
+                        style = "color:#003F7D; font-weight:700; margin-top:24px;"),
+                DTOutput("synth_categorie"),
+                tags$h4("Répartition par catégorie et par sexe",
+                        style = "color:#003F7D; font-weight:700; margin-top:24px;"),
+                DTOutput("synth_cat_sexe"),
+                tags$h4("Répartition par catégorie et par secteur",
+                        style = "color:#003F7D; font-weight:700; margin-top:24px;"),
+                DTOutput("synth_cat_secteur"),
+                tags$h4("Répartition par unité urbaine",
+                        style = "color:#003F7D; font-weight:700; margin-top:24px;"),
+                DTOutput("synth_uu"),
+                tags$div(style = "height:24px;")
+              )
+            )
           )
         ),
         tabPanel("Fiche établissement",
@@ -949,7 +990,7 @@ server <- function(input, output, session) {
   bandeau_restriction <- function(sel, dimension) {
     if (!actif(sel)) return(NULL)
     annotate("label", x = Inf, y = Inf, hjust = 1.02, vjust = 1.4,
-             label = paste0("\u26A0 Restreint à ", length(sel), " ", dimension,
+             label = paste0("⚠ Restreint à ", length(sel), " ", dimension,
                             " sélectionné", if (length(sel) > 1) "s" else "",
                             " : ", paste(sel, collapse = ", ")),
              fill = "#C7102C", colour = "white", fontface = "bold",
@@ -1913,6 +1954,186 @@ server <- function(input, output, session) {
               options = list(pageLength = 15, scrollX = TRUE))
   })
 
+  # ===========================================================================
+  #  ONGLET SYNTHÈSE RÉGIONALE
+  # ---------------------------------------------------------------------------
+  #  Présente en TABLEAUX les mêmes données que l'onglet Graphiques, pour la
+  #  rentrée sélectionnée. Chaque tableau réutilise EXACTEMENT l'agrégation du
+  #  graphique correspondant (même group_by, même source filtrée) afin que les
+  #  chiffres coïncident à l'unité près. Un format DT commun, sobre, pour tous.
+  # ===========================================================================
+
+  # Format DT partagé : tri conservé, pas de pagination parasite sur de petits
+  # tableaux, recherche masquée (les tableaux sont courts et déjà ordonnés).
+  dt_synth <- function(d, page = 10) {
+    datatable(d, rownames = FALSE,
+              options = list(pageLength = page, dom = "t", ordering = TRUE,
+                             scrollX = TRUE),
+              class = "stripe hover compact")
+  }
+  # Colonne de part formatée en pourcentage lisible.
+  col_part <- function(x) percent(x, accuracy = 0.1)
+
+  # ---- Bandeau de chiffres clés (dont le TOTAL demandé) ---------------------
+  output$synth_kpi <- renderUI({
+    d <- data_filtree()
+    tot <- sum(d$effectifs, na.rm = TRUE)
+    f   <- sum(d$femmes,    na.rm = TRUE)
+    h   <- sum(d$hommes,    na.rm = TRUE)
+    boite <- function(titre, valeur, couleur = "#003F7D", larg = 2) {
+      column(larg, tags$div(
+        style = paste0("border-left:4px solid ", couleur,
+                       "; background:#F7F9FC; padding:8px 10px; margin-bottom:6px;"),
+        tags$div(style = "font-size:11px; color:#555;", titre),
+        tags$div(style = paste0("font-size:19px; font-weight:700; color:", couleur, ";"),
+                 valeur)))
+    }
+    fluidRow(
+      boite("Total étudiants inscrits", fmt_eff(tot)),
+      boite("Femmes", paste0(fmt_eff(f), " (", col_part(f / tot), ")"), "#C7102C"),
+      boite("Hommes", paste0(fmt_eff(h), " (", col_part(h / tot), ")"), "#003F7D"),
+      boite("Établissements", as.character(n_distinct(d$uai_etab)), "#333333"),
+      boite("Communes", as.character(n_distinct(d$commune)), "#333333"),
+      boite("Catégories", as.character(n_distinct(d$categorie)), "#333333")
+    )
+  })
+
+  # ---- Tableau : par niveau d'études (= graphique p_niveau) -----------------
+  output$synth_niveau <- renderDT({
+    d <- data_filtree()
+    tot <- sum(d$effectifs, na.rm = TRUE)
+    t <- d %>%
+      group_by(`Niveau d'études` = degre) %>%
+      summarise(Effectifs = sum(effectifs, na.rm = TRUE), .groups = "drop") %>%
+      filter(Effectifs > 0) %>%
+      arrange(factor(`Niveau d'études`, levels = niveaux_ordre)) %>%
+      mutate(`Part` = col_part(Effectifs / tot),
+             Effectifs = fmt_eff(Effectifs))
+    # Ligne de total
+    t <- bind_rows(t, tibble(`Niveau d'études` = "Total",
+                             Effectifs = fmt_eff(tot), `Part` = "100,0 %"))
+    dt_synth(t)
+  })
+
+  # ---- Tableau : sexe × niveau (= graphique p_sexe) -------------------------
+  output$synth_sexe_niveau <- renderDT({
+    d <- data_filtree()
+    t <- d %>%
+      group_by(`Niveau d'études` = degre) %>%
+      summarise(Femmes = sum(femmes, na.rm = TRUE),
+                Hommes = sum(hommes, na.rm = TRUE), .groups = "drop") %>%
+      mutate(Total = Femmes + Hommes) %>%
+      filter(Total > 0) %>%
+      arrange(factor(`Niveau d'études`, levels = niveaux_ordre)) %>%
+      mutate(`% femmes` = col_part(Femmes / Total),
+             `% hommes` = col_part(Hommes / Total),
+             Femmes = fmt_eff(Femmes), Hommes = fmt_eff(Hommes),
+             Total  = fmt_eff(Total))
+    tf <- sum(d$femmes, na.rm = TRUE); th <- sum(d$hommes, na.rm = TRUE); tt <- tf + th
+    t <- bind_rows(t, tibble(`Niveau d'études` = "Total",
+                             Femmes = fmt_eff(tf), Hommes = fmt_eff(th),
+                             Total = fmt_eff(tt),
+                             `% femmes` = col_part(tf / tt),
+                             `% hommes` = col_part(th / tt)))
+    dt_synth(t %>% select(`Niveau d'études`, Femmes, `% femmes`,
+                          Hommes, `% hommes`, Total))
+  })
+
+  # ---- Tableau : par secteur (= graphique p_secteur) ------------------------
+  output$synth_secteur <- renderDT({
+    src <- appliquer_sel(data_annee_tous_secteurs(), "secteur", sel_secteur())
+    validate(need(nrow(src) > 0, MSG_VIDE))
+    tot <- sum(src$effectifs, na.rm = TRUE)
+    t <- src %>%
+      group_by(Secteur = secteur) %>%
+      summarise(Effectifs = sum(effectifs, na.rm = TRUE),
+                Femmes = sum(femmes, na.rm = TRUE),
+                Hommes = sum(hommes, na.rm = TRUE), .groups = "drop") %>%
+      arrange(desc(Effectifs)) %>%
+      mutate(`Part` = col_part(Effectifs / tot),
+             `% femmes` = col_part(Femmes / Effectifs),
+             Effectifs = fmt_eff(Effectifs),
+             Femmes = fmt_eff(Femmes), Hommes = fmt_eff(Hommes))
+    dt_synth(t %>% select(Secteur, Effectifs, `Part`, Femmes, `% femmes`, Hommes))
+  })
+
+  # ---- Tableau : par catégorie d'établissement (= graphique p_cat) ----------
+  output$synth_categorie <- renderDT({
+    src <- appliquer_sel(data_annee_toutes_cat(), "categorie", sel_categorie())
+    validate(need(nrow(src) > 0, MSG_VIDE))
+    tot <- sum(src$effectifs, na.rm = TRUE)
+    t <- src %>%
+      group_by(`Catégorie d'établissement` = categorie) %>%
+      summarise(Effectifs = sum(effectifs, na.rm = TRUE),
+                Femmes = sum(femmes, na.rm = TRUE),
+                Hommes = sum(hommes, na.rm = TRUE), .groups = "drop") %>%
+      filter(Effectifs > 0) %>% arrange(desc(Effectifs)) %>%
+      mutate(`Part` = col_part(Effectifs / tot),
+             `% femmes` = col_part(Femmes / Effectifs),
+             Effectifs = fmt_eff(Effectifs),
+             Femmes = fmt_eff(Femmes), Hommes = fmt_eff(Hommes))
+    dt_synth(t %>% select(`Catégorie d'établissement`, Effectifs, `Part`,
+                          Femmes, `% femmes`, Hommes), page = 15)
+  })
+
+  # ---- Tableau : catégorie × sexe (= graphique p_cat_sexe) ------------------
+  output$synth_cat_sexe <- renderDT({
+    src <- appliquer_sel(data_annee_toutes_cat(), "categorie", sel_categorie())
+    validate(need(nrow(src) > 0, MSG_VIDE))
+    t <- src %>%
+      group_by(`Catégorie d'établissement` = categorie) %>%
+      summarise(Femmes = sum(femmes, na.rm = TRUE),
+                Hommes = sum(hommes, na.rm = TRUE), .groups = "drop") %>%
+      mutate(Total = Femmes + Hommes) %>%
+      filter(Total > 0) %>% arrange(desc(Total)) %>%
+      mutate(`% femmes` = col_part(Femmes / Total),
+             `% hommes` = col_part(Hommes / Total),
+             Femmes = fmt_eff(Femmes), Hommes = fmt_eff(Hommes),
+             Total = fmt_eff(Total))
+    dt_synth(t %>% select(`Catégorie d'établissement`, Femmes, `% femmes`,
+                          Hommes, `% hommes`, Total), page = 15)
+  })
+
+  # ---- Tableau : catégorie × secteur (= graphique p_cat_secteur) ------------
+  output$synth_cat_secteur <- renderDT({
+    src <- appliquer_sel(filter(etab_aggreg, rentree == input$rentree),
+                         "categorie", sel_categorie())
+    validate(need(nrow(src) > 0, MSG_VIDE))
+    t <- src %>%
+      group_by(`Catégorie d'établissement` = categorie, Secteur = secteur) %>%
+      summarise(Effectifs = sum(effectifs, na.rm = TRUE), .groups = "drop") %>%
+      filter(Effectifs > 0) %>%
+      tidyr::pivot_wider(names_from = Secteur, values_from = Effectifs,
+                         values_fill = 0)
+    # Total par ligne + tri
+    secteurs_pres <- setdiff(names(t), "Catégorie d'établissement")
+    t <- t %>% mutate(Total = rowSums(across(all_of(secteurs_pres)))) %>%
+      arrange(desc(Total))
+    # Formatage des colonnes numériques
+    for (cc in c(secteurs_pres, "Total"))
+      t[[cc]] <- fmt_eff(t[[cc]])
+    dt_synth(t, page = 15)
+  })
+
+  # ---- Tableau : par unité urbaine (= graphique p_uu) -----------------------
+  output$synth_uu <- renderDT({
+    d <- data_filtree()
+    tot <- sum(d$effectifs, na.rm = TRUE)
+    t <- d %>%
+      mutate(unite_urbaine = ifelse(is.na(unite_urbaine) | unite_urbaine == "",
+                                    "Non renseignée", unite_urbaine)) %>%
+      group_by(`Unité urbaine` = unite_urbaine) %>%
+      summarise(Effectifs = sum(effectifs, na.rm = TRUE),
+                Femmes = sum(femmes, na.rm = TRUE),
+                Hommes = sum(hommes, na.rm = TRUE), .groups = "drop") %>%
+      filter(Effectifs > 0) %>% arrange(desc(Effectifs)) %>%
+      mutate(`Part` = col_part(Effectifs / tot),
+             Effectifs = fmt_eff(Effectifs),
+             Femmes = fmt_eff(Femmes), Hommes = fmt_eff(Hommes))
+    dt_synth(t %>% select(`Unité urbaine`, Effectifs, `Part`, Femmes, Hommes),
+             page = 15)
+  })
+
   # --- Carte statique (pour l'export Word) : fond souverain, sans tuiles web ---
   #  Cadre FIXE sur toute la Normandie (lisible quel que soit l'établissement,
   #  y compris mono-site). Mêmes coordonnées que la carte interactive
@@ -2391,6 +2612,139 @@ server <- function(input, output, session) {
             plot.subtitle = element_text(size = 11, colour = "#555555"),
             plot.margin = margin(10, 10, 10, 10))
   })
+
+  # ---- Export de la synthèse régionale en Word ------------------------------
+  #  Même logique graphique que l'export de la fiche établissement : en-tête
+  #  (logo + mentions + titre), tableau de chiffres clés, puis les graphiques de
+  #  l'onglet Graphiques insérés en images. Les graphiques larges ou hauts
+  #  passent sur une page paysage pour rester lisibles.
+  output$export_synthese <- downloadHandler(
+    filename = function()
+      paste0("Synthese_effectifs_Normandie_", input$rentree, ".docx"),
+    content = function(file) {
+      d <- data_filtree()
+      validate(need(nrow(d) > 0, MSG_VIDE))
+      tot <- sum(d$effectifs, na.rm = TRUE)
+      f   <- sum(d$femmes,    na.rm = TRUE)
+      h   <- sum(d$hommes,    na.rm = TRUE)
+
+      tp <- function(t, sz = 11, bold = FALSE, col = "black", it = FALSE)
+        ftext(t, fp_text(font.family = "Arial", font.size = sz, bold = bold,
+                         color = col, italic = it))
+      titre <- function(doc, t) body_add_fpar(doc, fpar(
+        tp(t, 13, TRUE, "#003F7D"),
+        fp_p = fp_par(padding.top = 12, padding.bottom = 4,
+                      keep_with_next = TRUE)))
+
+      # Images des graphiques (fichiers temporaires). On réutilise EXACTEMENT
+      # les graphiques de l'onglet Graphiques, garantissant que le document
+      # montre les mêmes visuels que l'application.
+      img <- function(p, l, ht) {
+        tmp <- tempfile(fileext = ".png")
+        ggsave(tmp, plot = p, width = l, height = ht, dpi = 150, bg = "white")
+        tmp
+      }
+      # Graphiques compacts (portrait) et graphiques hauts (paysage pleine page).
+      i_niveau      <- img(p_niveau(),      6.6, 4.2)
+      i_sexe        <- img(p_sexe(),        6.6, 4.6)
+      i_secteur     <- img(p_secteur(),     6.6, 3.4)
+      i_cat         <- img(p_cat(),         9.4, 5.6)   # paysage
+      i_cat_sexe    <- img(p_cat_sexe(),    9.4, 6.4)   # paysage
+      i_cat_secteur <- img(p_cat_secteur(), 9.4, 6.4)   # paysage
+      n_uu          <- n_distinct(data_filtree()$unite_urbaine)
+      h_uu          <- min(9.0, max(4.0, 0.32 * max(1, n_uu) + 1.6))
+      i_uu          <- img(p_uu(),          9.4, h_uu)  # paysage, hauteur adaptée
+
+      # Tableau de chiffres clés (mêmes valeurs que le bandeau de l'onglet).
+      t_cles <- data.frame(
+        Indicateur = c("Total étudiants inscrits", "dont femmes", "dont hommes",
+                       "Établissements", "Communes d'implantation", "Catégories"),
+        Valeur = c(fmt_eff(tot),
+                   paste0(fmt_eff(f), " (", percent(f / tot, accuracy = 0.1), ")"),
+                   paste0(fmt_eff(h), " (", percent(h / tot, accuracy = 0.1), ")"),
+                   as.character(n_distinct(d$uai_etab)),
+                   as.character(n_distinct(d$commune)),
+                   as.character(n_distinct(d$categorie))),
+        stringsAsFactors = FALSE, check.names = FALSE
+      )
+
+      doc <- read_docx()
+
+      # ---- En-tête (première page) ------------------------------------------
+      logo_doc <- if (!is.na(logo_src)) file.path("www", logo_src) else NA_character_
+      if (!is.na(logo_doc) && file.exists(logo_doc) &&
+          grepl("(?i)\\.(png|jpe?g)$", logo_doc)) {
+        px <- dimensions_image(logo_doc)
+        l_logo <- 1.9
+        h_logo <- if (is.null(px)) round(l_logo * 0.38, 2)
+                  else round(l_logo * px$h / px$l, 2)
+        doc <- tryCatch(body_add_img(doc, logo_doc, width = l_logo, height = h_logo),
+                        error = function(e) doc)
+      }
+      doc <- body_add_fpar(doc, fpar(tp(MENTION_DEESTRI, 9, TRUE, "#003F7D")))
+      doc <- body_add_fpar(doc, fpar(
+        tp(SOURCES_TXT, 7.5, it = TRUE, col = "#555555"),
+        fp_p = fp_par(border.bottom = fp_border(color = "#003F7D", width = 1),
+                      padding.bottom = 8)))
+
+      doc <- body_add_fpar(doc, fpar(
+        tp("Synthèse régionale des effectifs étudiants en Normandie",
+           18, TRUE, "#003F7D"),
+        fp_p = fp_par(padding.top = 10)))
+      doc <- body_add_fpar(doc, fpar(
+          tp(paste0("Grands chiffres — rentrée ", input$rentree),
+             11, it = TRUE, col = "#555555"),
+          fp_p = fp_par(border.bottom = fp_border(color = "#C7102C", width = 2),
+                        padding.bottom = 6)))
+
+      doc <- titre(doc, "Chiffres clés")
+      doc <- body_add_table(doc, t_cles, style = "table_template")
+
+      # ---- Graphiques compacts (portrait) -----------------------------------
+      doc <- titre(doc, "Répartition par niveau d'études")
+      doc <- body_add_img(doc, i_niveau, width = 6.4, height = round(6.4/6.6*4.2, 2))
+
+      doc <- titre(doc, "Répartition par sexe et par niveau d'études")
+      doc <- body_add_img(doc, i_sexe, width = 6.4, height = round(6.4/6.6*4.6, 2))
+
+      doc <- titre(doc, "Répartition par secteur")
+      doc <- body_add_img(doc, i_secteur, width = 6.4, height = round(6.4/6.6*3.4, 2))
+
+      # ---- Graphiques larges / hauts (page paysage dédiée) ------------------
+      # On clôt la section portrait, on insère les graphiques larges en paysage,
+      # puis on rouvre une section portrait pour le pied de page.
+      doc <- body_end_block_section(doc, block_section(prop_section(
+        page_size = page_size(orient = "portrait"), type = "nextPage")))
+
+      doc <- titre(doc, "Répartition par catégorie d'établissement")
+      doc <- body_add_img(doc, i_cat, width = 9.4, height = round(9.4/9.4*5.6, 2))
+
+      doc <- titre(doc, "Répartition par catégorie et par sexe")
+      doc <- body_add_img(doc, i_cat_sexe, width = 9.4, height = round(9.4/9.4*6.4, 2))
+
+      doc <- titre(doc, "Répartition par catégorie et par secteur")
+      doc <- body_add_img(doc, i_cat_secteur, width = 9.4, height = round(9.4/9.4*6.4, 2))
+
+      doc <- titre(doc, "Répartition par unité urbaine")
+      doc <- body_add_img(doc, i_uu, width = 9.4, height = round(9.4/9.4*h_uu, 2))
+
+      doc <- body_end_block_section(doc, block_section(prop_section(
+        page_size = page_size(orient = "landscape"),
+        page_margins = page_mar(top = 0.6, bottom = 0.6),
+        type = "nextPage")))
+
+      # ---- Pied de page -----------------------------------------------------
+      doc <- body_add_fpar(doc, fpar(tp(paste0(
+        "Observatoire ESRI Normandie — Région Normandie. Document produit le ",
+        format(Sys.Date(), "%d/%m/%Y"), "."),
+        8, it = TRUE, col = "#555555"),
+        fp_p = fp_par(padding.top = 10,
+                      border.top = fp_border(color = "#CCCCCC", width = 1))))
+
+      print(doc, target = file)
+      unlink(c(i_niveau, i_sexe, i_secteur, i_cat, i_cat_sexe, i_cat_secteur, i_uu))
+    }
+  )
 
   # ---- Export du comparateur en PDF -----------------------------------------
   output$export_comparateur <- downloadHandler(
