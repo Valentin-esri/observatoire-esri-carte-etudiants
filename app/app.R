@@ -814,30 +814,25 @@ ui <- fluidPage(
                 tags$hr(),
                 tags$h4("Répartition par niveau d'études",
                         style = "color:#003F7D; font-weight:700; margin-top:14px;"),
-                tags$div(style = "background:#FFF3CD; padding:6px; margin-bottom:6px;",
-                         tags$b("TEST A — renderTable (HTML simple, sans DT) :")),
-                tableOutput("synth_niveau_test"),
-                tags$div(style = "background:#D1ECF1; padding:6px; margin:10px 0 6px;",
-                         tags$b("TEST B — renderDT (widget DataTables) :")),
-                DTOutput("synth_niveau"),
+                tableOutput("synth_niveau"),
                 tags$h4("Répartition par sexe et par niveau d'études",
                         style = "color:#003F7D; font-weight:700; margin-top:24px;"),
-                DTOutput("synth_sexe_niveau"),
+                tableOutput("synth_sexe_niveau"),
                 tags$h4("Répartition par secteur",
                         style = "color:#003F7D; font-weight:700; margin-top:24px;"),
-                DTOutput("synth_secteur"),
+                tableOutput("synth_secteur"),
                 tags$h4("Répartition par catégorie d'établissement",
                         style = "color:#003F7D; font-weight:700; margin-top:24px;"),
-                DTOutput("synth_categorie"),
+                tableOutput("synth_categorie"),
                 tags$h4("Répartition par catégorie et par sexe",
                         style = "color:#003F7D; font-weight:700; margin-top:24px;"),
-                DTOutput("synth_cat_sexe"),
+                tableOutput("synth_cat_sexe"),
                 tags$h4("Répartition par catégorie et par secteur",
                         style = "color:#003F7D; font-weight:700; margin-top:24px;"),
-                DTOutput("synth_cat_secteur"),
+                tableOutput("synth_cat_secteur"),
                 tags$h4("Répartition par unité urbaine",
                         style = "color:#003F7D; font-weight:700; margin-top:24px;"),
-                DTOutput("synth_uu"),
+                tableOutput("synth_uu"),
                 tags$div(style = "height:24px;")
               )
             )
@@ -1968,14 +1963,6 @@ server <- function(input, output, session) {
   #  chiffres coïncident à l'unité près. Un format DT commun, sobre, pour tous.
   # ===========================================================================
 
-  # Format DT partagé : tri conservé, pas de pagination parasite sur de petits
-  # tableaux, recherche masquée (les tableaux sont courts et déjà ordonnés).
-  dt_synth <- function(d, page = 10) {
-    datatable(d, rownames = FALSE,
-              options = list(pageLength = page, dom = "t", ordering = TRUE,
-                             scrollX = TRUE),
-              class = "stripe hover compact")
-  }
   # Colonne de part formatée en pourcentage lisible.
   col_part <- function(x) percent(x, accuracy = 0.1)
 
@@ -2003,21 +1990,25 @@ server <- function(input, output, session) {
     )
   })
 
-  # ---- Tableau : par niveau d'études (= graphique p_niveau) -----------------
-  # --- TEST : meme tableau en renderTable (HTML basique, sans widget DT) ---
-  output$synth_niveau_test <- renderTable({
-    d <- data_filtree()
-    tot <- sum(d$effectifs, na.rm = TRUE)
-    d %>%
-      group_by(`Niveau` = degre) %>%
-      summarise(Effectifs = sum(effectifs, na.rm = TRUE), .groups = "drop") %>%
-      filter(Effectifs > 0) %>%
-      arrange(factor(`Niveau`, levels = niveaux_ordre)) %>%
-      mutate(Part = paste0(round(100 * Effectifs / tot, 1), " %"),
-             Effectifs = format(Effectifs, big.mark = " "))
-  }, striped = TRUE, spacing = "xs", width = "100%")
+  # ===========================================================================
+  #  TABLEAUX DE SYNTHÈSE — rendus en renderTable (HTML), pas en DT.
+  # ---------------------------------------------------------------------------
+  #  Le widget DataTables (DT) ne s'initialise pas de façon fiable en Shinylive
+  #  (WebAssembly) : les tableaux y restaient réduits à leurs en-têtes. On rend
+  #  donc ces tableaux courts en HTML pur, robuste partout. Ils sont TRIÉS PAR
+  #  DÉFAUT dans l'ordre le plus utile (niveaux dans l'ordre pédagogique ;
+  #  secteurs, catégories et unités urbaines par effectifs décroissants), ce qui
+  #  compense l'absence de tri interactif pour des tableaux de quelques lignes.
+  # ===========================================================================
 
-  output$synth_niveau <- renderDT({
+  # Rendu commun : rayures, compact, pleine largeur, aligné pour la lisibilité.
+  render_synth <- function(expr) {
+    renderTable(expr, striped = TRUE, spacing = "xs", width = "100%",
+                align = "l", na = "")
+  }
+
+  # ---- Tableau : par niveau d'études (= graphique p_niveau) -----------------
+  output$synth_niveau <- render_synth({
     d <- data_filtree()
     tot <- sum(d$effectifs, na.rm = TRUE)
     t <- d %>%
@@ -2027,14 +2018,12 @@ server <- function(input, output, session) {
       arrange(factor(`Niveau d'études`, levels = niveaux_ordre)) %>%
       mutate(`Part` = col_part(Effectifs / tot),
              Effectifs = fmt_eff(Effectifs))
-    # Ligne de total
-    t <- bind_rows(t, tibble(`Niveau d'études` = "Total",
-                             Effectifs = fmt_eff(tot), `Part` = "100,0 %"))
-    dt_synth(t)
-  }, server = FALSE)
+    bind_rows(t, tibble(`Niveau d'études` = "Total",
+                        Effectifs = fmt_eff(tot), `Part` = "100,0 %"))
+  })
 
   # ---- Tableau : sexe × niveau (= graphique p_sexe) -------------------------
-  output$synth_sexe_niveau <- renderDT({
+  output$synth_sexe_niveau <- render_synth({
     d <- data_filtree()
     t <- d %>%
       group_by(`Niveau d'études` = degre) %>%
@@ -2053,16 +2042,16 @@ server <- function(input, output, session) {
                              Total = fmt_eff(tt),
                              `% femmes` = col_part(tf / tt),
                              `% hommes` = col_part(th / tt)))
-    dt_synth(t %>% select(`Niveau d'études`, Femmes, `% femmes`,
-                          Hommes, `% hommes`, Total))
-  }, server = FALSE)
+    t %>% select(`Niveau d'études`, Femmes, `% femmes`,
+                 Hommes, `% hommes`, Total)
+  })
 
   # ---- Tableau : par secteur (= graphique p_secteur) ------------------------
-  output$synth_secteur <- renderDT({
+  output$synth_secteur <- render_synth({
     src <- appliquer_sel(data_annee_tous_secteurs(), "secteur", sel_secteur())
     validate(need(nrow(src) > 0, MSG_VIDE))
     tot <- sum(src$effectifs, na.rm = TRUE)
-    t <- src %>%
+    src %>%
       group_by(Secteur = secteur) %>%
       summarise(Effectifs = sum(effectifs, na.rm = TRUE),
                 Femmes = sum(femmes, na.rm = TRUE),
@@ -2071,16 +2060,16 @@ server <- function(input, output, session) {
       mutate(`Part` = col_part(Effectifs / tot),
              `% femmes` = col_part(Femmes / Effectifs),
              Effectifs = fmt_eff(Effectifs),
-             Femmes = fmt_eff(Femmes), Hommes = fmt_eff(Hommes))
-    dt_synth(t %>% select(Secteur, Effectifs, `Part`, Femmes, `% femmes`, Hommes))
-  }, server = FALSE)
+             Femmes = fmt_eff(Femmes), Hommes = fmt_eff(Hommes)) %>%
+      select(Secteur, Effectifs, `Part`, Femmes, `% femmes`, Hommes)
+  })
 
   # ---- Tableau : par catégorie d'établissement (= graphique p_cat) ----------
-  output$synth_categorie <- renderDT({
+  output$synth_categorie <- render_synth({
     src <- appliquer_sel(data_annee_toutes_cat(), "categorie", sel_categorie())
     validate(need(nrow(src) > 0, MSG_VIDE))
     tot <- sum(src$effectifs, na.rm = TRUE)
-    t <- src %>%
+    src %>%
       group_by(`Catégorie d'établissement` = categorie) %>%
       summarise(Effectifs = sum(effectifs, na.rm = TRUE),
                 Femmes = sum(femmes, na.rm = TRUE),
@@ -2089,16 +2078,16 @@ server <- function(input, output, session) {
       mutate(`Part` = col_part(Effectifs / tot),
              `% femmes` = col_part(Femmes / Effectifs),
              Effectifs = fmt_eff(Effectifs),
-             Femmes = fmt_eff(Femmes), Hommes = fmt_eff(Hommes))
-    dt_synth(t %>% select(`Catégorie d'établissement`, Effectifs, `Part`,
-                          Femmes, `% femmes`, Hommes), page = 15)
-  }, server = FALSE)
+             Femmes = fmt_eff(Femmes), Hommes = fmt_eff(Hommes)) %>%
+      select(`Catégorie d'établissement`, Effectifs, `Part`,
+             Femmes, `% femmes`, Hommes)
+  })
 
   # ---- Tableau : catégorie × sexe (= graphique p_cat_sexe) ------------------
-  output$synth_cat_sexe <- renderDT({
+  output$synth_cat_sexe <- render_synth({
     src <- appliquer_sel(data_annee_toutes_cat(), "categorie", sel_categorie())
     validate(need(nrow(src) > 0, MSG_VIDE))
-    t <- src %>%
+    src %>%
       group_by(`Catégorie d'établissement` = categorie) %>%
       summarise(Femmes = sum(femmes, na.rm = TRUE),
                 Hommes = sum(hommes, na.rm = TRUE), .groups = "drop") %>%
@@ -2107,13 +2096,13 @@ server <- function(input, output, session) {
       mutate(`% femmes` = col_part(Femmes / Total),
              `% hommes` = col_part(Hommes / Total),
              Femmes = fmt_eff(Femmes), Hommes = fmt_eff(Hommes),
-             Total = fmt_eff(Total))
-    dt_synth(t %>% select(`Catégorie d'établissement`, Femmes, `% femmes`,
-                          Hommes, `% hommes`, Total), page = 15)
-  }, server = FALSE)
+             Total = fmt_eff(Total)) %>%
+      select(`Catégorie d'établissement`, Femmes, `% femmes`,
+             Hommes, `% hommes`, Total)
+  })
 
   # ---- Tableau : catégorie × secteur (= graphique p_cat_secteur) ------------
-  output$synth_cat_secteur <- renderDT({
+  output$synth_cat_secteur <- render_synth({
     src <- appliquer_sel(filter(etab_aggreg, rentree == input$rentree),
                          "categorie", sel_categorie())
     validate(need(nrow(src) > 0, MSG_VIDE))
@@ -2123,21 +2112,19 @@ server <- function(input, output, session) {
       filter(Effectifs > 0) %>%
       tidyr::pivot_wider(names_from = Secteur, values_from = Effectifs,
                          values_fill = 0)
-    # Total par ligne + tri
     secteurs_pres <- setdiff(names(t), "Catégorie d'établissement")
     t <- t %>% mutate(Total = rowSums(across(all_of(secteurs_pres)))) %>%
       arrange(desc(Total))
-    # Formatage des colonnes numériques
     for (cc in c(secteurs_pres, "Total"))
       t[[cc]] <- fmt_eff(t[[cc]])
-    dt_synth(t, page = 15)
-  }, server = FALSE)
+    t
+  })
 
   # ---- Tableau : par unité urbaine (= graphique p_uu) -----------------------
-  output$synth_uu <- renderDT({
+  output$synth_uu <- render_synth({
     d <- data_filtree()
     tot <- sum(d$effectifs, na.rm = TRUE)
-    t <- d %>%
+    d %>%
       mutate(unite_urbaine = ifelse(is.na(unite_urbaine) | unite_urbaine == "",
                                     "Non renseignée", unite_urbaine)) %>%
       group_by(`Unité urbaine` = unite_urbaine) %>%
@@ -2147,10 +2134,9 @@ server <- function(input, output, session) {
       filter(Effectifs > 0) %>% arrange(desc(Effectifs)) %>%
       mutate(`Part` = col_part(Effectifs / tot),
              Effectifs = fmt_eff(Effectifs),
-             Femmes = fmt_eff(Femmes), Hommes = fmt_eff(Hommes))
-    dt_synth(t %>% select(`Unité urbaine`, Effectifs, `Part`, Femmes, Hommes),
-             page = 15)
-  }, server = FALSE)
+             Femmes = fmt_eff(Femmes), Hommes = fmt_eff(Hommes)) %>%
+      select(`Unité urbaine`, Effectifs, `Part`, Femmes, Hommes)
+  })
 
   # --- Carte statique (pour l'export Word) : fond souverain, sans tuiles web ---
   #  Cadre FIXE sur toute la Normandie (lisible quel que soit l'établissement,
