@@ -1,7 +1,7 @@
 # Carte interactive des effectifs étudiants en Normandie
 
 Application de consultation des effectifs d'étudiants inscrits dans les
-établissements d'enseignement supérieur de Normandie, rentrées 2015 à 2024.
+établissements d'enseignement supérieur de Normandie, rentrées 2015 à 2025.
 
 **Version de test** — diffusée pour recueillir des retours avant déploiement.
 
